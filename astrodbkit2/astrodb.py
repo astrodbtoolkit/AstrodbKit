@@ -1,6 +1,6 @@
 # Main database handler code
 
-__all__ = ['__version__', 'Database', 'load_connection']
+__all__ = ['__version__', 'Database', 'load_connection', 'or_', 'and_']
 
 import os
 import json
@@ -9,6 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from sqlalchemy import create_engine
+from sqlalchemy import or_, and_
 
 try:
     from .version import version as __version__
@@ -136,8 +137,9 @@ class Database:
             results = self.session.query(self.metadata.tables[table]).all()
             data = [row._asdict() for row in results]
             filename = table + '_data.json'
-            with open(os.path.join(directory, filename), 'w') as f:
-                f.write(json.dumps(data, indent=4))
+            if len(data) > 0:
+                with open(os.path.join(directory, filename), 'w') as f:
+                    f.write(json.dumps(data, indent=4))
 
         # Output database contents as JSON data into specified directory
         for row in self.query(self.Sources):
@@ -148,13 +150,49 @@ class Database:
 
     def load_database(self, directory):
         # From a directory, reload the database
-        # TODO: implement this
-        pass
 
-    def load_table(self, file):
-        # Load a reference table
-        pass
+        # Clear existing database contents
+        for table in self.metadata.tables:
+            self.metadata.tables[table].delete().execute()
 
-    def load_json(self, file):
+        # Load reference tables first
+        for table in REFERENCE_TABLES:
+            self.load_table(table, directory)
+
+        # Load object data
+        for file in os.listdir(directory):
+            # Skip reference tables
+            core_name = file.replace('_data.json', '')
+            if core_name in REFERENCE_TABLES:
+                continue
+
+            self.load_json(os.path.join(directory, file))
+
+    def load_table(self, table, directory):
+        # Load a reference table, expects there to be a file of the form [table]_data.json
+        filename = os.path.join(directory, table+'_data.json')
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                data = json.load(f)
+                self.metadata.tables[table].insert().execute(data)
+        else:
+            print(f'{table}_data.json not found.')
+
+    def load_json(self, filename):
         # Load a single object
-        pass
+        with open(filename, 'r') as f:
+            data = json.load(f)
+
+        # Loop through the dictionary, adding data to the database.
+        # Ensure that Sources is added first
+        source = data['Sources'][0]['source']
+        self.Sources.insert().execute(data['Sources'])
+        for key, value in data.items():
+            if key == 'Sources':
+                continue
+
+            # Loop over multiple values (eg, Photometry)
+            for v in value:
+                temp_dict = v
+                temp_dict['source'] = source
+                self.metadata.tables[key].insert().execute(temp_dict)
