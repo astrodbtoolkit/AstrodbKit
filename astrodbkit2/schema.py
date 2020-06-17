@@ -56,9 +56,10 @@ class Photometry(Base):
     __tablename__ = 'Photometry'
     source = Column(String(100), ForeignKey('Sources.source'), nullable=False, primary_key=True)
     band = Column(String(30), primary_key=True)
+    ucd = Column(String(100))
     magnitude = Column(Float)
     magnitude_error = Column(Float)
-    system = Column(String(30), ForeignKey('Systems.name'))
+    # system = Column(String(30), ForeignKey('Systems.name'))
     telescope = Column(String(30), ForeignKey('Telescopes.name'))
     instrument = Column(String(30), ForeignKey('Instruments.name'))
     epoch = Column(String(30))

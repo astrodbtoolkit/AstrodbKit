@@ -2,6 +2,8 @@
 
 __all__ = ['__version__', 'Database', 'load_connection']
 
+import os
+import json
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
@@ -13,7 +15,8 @@ try:
 except ImportError:
     __version__ = ''
 
-Base = declarative_base()
+Base = declarative_base()  # For SQLAlchemy handling
+REFERENCE_TABLES = ['Publications', 'Telescopes', 'Instruments']
 
 
 def load_connection(connection_string):
@@ -89,6 +92,8 @@ class Database:
         self.Names = self.metadata.tables['Names']
         self.Publications = self.metadata.tables['Publications']
         self.Photometry = self.metadata.tables['Photometry']
+        self.Telescopes = self.metadata.tables['Telescopes']
+        self.Instruments = self.metadata.tables['Instruments']
 
     def create_database(self):
         # self.base.metadata.drop_all()  # drop all the tables
@@ -110,11 +115,14 @@ class Database:
         del row_dict['source']
         return row_dict
 
-    def inventory(self, name):
+    def inventory(self, name, pretty_print=False):
         data_dict = {}
         self._inventory_query(data_dict, self.Sources, 'Sources', name)
         self._inventory_query(data_dict, self.Names, 'Names', name)
         self._inventory_query(data_dict, self.Photometry, 'Photometry', name)
+
+        if pretty_print:
+            print(json.dumps(data_dict, indent=4))
 
         return data_dict
 
@@ -122,8 +130,31 @@ class Database:
         # Direct SQL query
         return self.engine.execute(query).fetchall()
 
-    def save(self, directory='SIMPLE/data'):
+    def save(self, directory):
+        # Output reference tables
+        for table in REFERENCE_TABLES:
+            results = self.session.query(self.metadata.tables[table]).all()
+            data = [row._asdict() for row in results]
+            filename = table + '_data.json'
+            with open(os.path.join(directory, filename), 'w') as f:
+                f.write(json.dumps(data, indent=4))
+
         # Output database contents as JSON data into specified directory
         for row in self.query(self.Sources):
-            name = row.source.lower()
+            filename = row.source.lower().replace(' ', '_') + '_data.json'
             data = self.inventory(row.source)
+            with open(os.path.join(directory, filename), 'w') as f:
+                f.write(json.dumps(data, indent=4))
+
+    def load_database(self, directory):
+        # From a directory, reload the database
+        # TODO: implement this
+        pass
+
+    def load_table(self, file):
+        # Load a reference table
+        pass
+
+    def load_json(self, file):
+        # Load a single object
+        pass
