@@ -1,7 +1,7 @@
 # Schema for the SIMPLE database
 
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, BigInteger, Enum, Date, DateTime
-from astrodbkit2.astrodb import Base
+from .astrodb import Base
 
 
 # -------------------------------------------------------------------------------------------------------------------

@@ -1,15 +1,15 @@
 # Main database handler code
 
-__all__ = ['__version__', 'Database', 'load_connection', 'or_', 'and_']
+__all__ = ['__version__', 'Database', 'load_connection', 'or_', 'and_', 'create_database']
 
 import os
 import json
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
-from sqlalchemy import event
-from sqlalchemy import create_engine
+from sqlalchemy import event, create_engine
 from sqlalchemy import or_, and_
+from .utils import json_serializer
 
 try:
     from .version import version as __version__
@@ -17,7 +17,6 @@ except ImportError:
     __version__ = ''
 
 Base = declarative_base()  # For SQLAlchemy handling
-REFERENCE_TABLES = ['Publications', 'Telescopes', 'Instruments']
 
 
 def load_connection(connection_string):
@@ -59,6 +58,7 @@ def load_connection(connection_string):
 
 
 def set_sqlite():
+    # Special overrides when using SQLite
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         # Enable foreign key checking in SQLite
@@ -67,12 +67,41 @@ def set_sqlite():
         cursor.close()
 
 
-class Database:
-    """
-    Wrapper for database calls and utility functions
-    """
+def create_database(connection_string):
+    session, base, engine = load_connection(connection_string)
+    # base.metadata.drop_all()  # drop all the tables
+    base.metadata.create_all()  # this explicitly create the SQLite file
 
-    def __init__(self, connection_string):
+
+class Database:
+    def __init__(self, connection_string,
+                 reference_tables=['Publications', 'Telescopes', 'Instruments'],
+                 primary_table='Sources',
+                 primary_table_key='source',
+                 foreign_key='source',
+                 column_type_overrides={}):
+        """
+        Wrapper for database calls and utility functions
+
+        Parameters
+        ----------
+        connection_string : str
+            Connection string to establish a database connection
+        reference_tables : list
+            List of reference tables; these are treated separately from data tables.
+            Default: ['Publications', 'Telescopes', 'Instruments']
+        primary_table : str
+            Name of the primary source table. Default: Sources
+        primary_table_key : str
+            Name of the primary key in the sources table. This is meant to be unique and used to join tables.
+            Default: source
+        foreign_key : str
+            Name of the foreign key in other tables that refer back to the primary table. Default: source
+        column_type_overrides : dict
+            Dictionary with table.column type overrides. For example, {'spectra.spectrum': sqlalchemy.types.TEXT()}
+            will set the table spectra, column spectrum to be of type TEXT()
+        """
+
         self.session, self.base, self.engine = load_connection(connection_string)
 
         # Convenience method
@@ -82,48 +111,59 @@ class Database:
         self.metadata = self.base.metadata
         self.metadata.reflect(bind=self.engine)
 
-        if len(self.metadata.tables) > 0:
-            self._prepare_tables()
-        else:
+        self._reference_tables = reference_tables
+        self._primary_table = primary_table
+        self._primary_table_key = primary_table_key
+        self._foreign_key = foreign_key
+
+        if len(self.metadata.tables) == 0:
             print('Database empty. Import schema (eg, from astrodbkit.schema import *) '
-                  'and then run the create_database() here')
-
-    def _prepare_tables(self):
-        self.Sources = self.metadata.tables['Sources']
-        self.Names = self.metadata.tables['Names']
-        self.Publications = self.metadata.tables['Publications']
-        self.Photometry = self.metadata.tables['Photometry']
-        self.Telescopes = self.metadata.tables['Telescopes']
-        self.Instruments = self.metadata.tables['Instruments']
-
-    def create_database(self):
-        # self.base.metadata.drop_all()  # drop all the tables
-        self.base.metadata.create_all()  # this explicitly create the SQLite file
+                  'and then run create_database()')
+            raise RuntimeError('Create database first.')
 
         self._prepare_tables()
 
-    def _inventory_query(self, data_dict, table, table_name, source_name):
-        results = self.session.query(table).filter(table.c.source == source_name).all()
+        # If column overrides are provided, this will set the types to whatever the user provided
+        if len(column_type_overrides) > 0:
+            for k, v in column_type_overrides.items():
+                tab, col = k.split('.')
+                self.metadata.tables[tab].columns[col].type = v
 
-        if results and table_name == 'Sources':
+    def _prepare_tables(self):
+        for table in self.metadata.tables:
+            self.__setattr__(table, self.metadata.tables[table])
+
+    def _inventory_query(self, data_dict, table_name, source_name):
+        table = self.metadata.tables[table_name]
+
+        if table_name == self._primary_table:
+            column = table.columns[self._primary_table_key]
+        else:
+            column = table.columns[self._foreign_key]
+
+        results = self.session.query(table).filter(column == source_name).all()
+
+        if results and table_name == self._primary_table:
             data_dict[table_name] = [row._asdict() for row in results]
         elif results:
             data_dict[table_name] = [self._row_cleanup(row) for row in results]
 
-    @staticmethod
-    def _row_cleanup(row):
+    def _row_cleanup(self, row):
         row_dict = row._asdict()
-        del row_dict['source']
+        del row_dict[self._foreign_key]
         return row_dict
 
     def inventory(self, name, pretty_print=False):
         data_dict = {}
-        self._inventory_query(data_dict, self.Sources, 'Sources', name)
-        self._inventory_query(data_dict, self.Names, 'Names', name)
-        self._inventory_query(data_dict, self.Photometry, 'Photometry', name)
+        # Loop over tables (not reference tables) and gather the information. Start with the primary table, though
+        self._inventory_query(data_dict, self._primary_table, name)
+        for table in self.metadata.tables:
+            if table in self._reference_tables + [self._primary_table]:
+                continue
+            self._inventory_query(data_dict, table, name)
 
         if pretty_print:
-            print(json.dumps(data_dict, indent=4))
+            print(json.dumps(data_dict, indent=4, default=json_serializer))
 
         return data_dict
 
@@ -131,22 +171,31 @@ class Database:
         # Direct SQL query
         return self.engine.execute(query).fetchall()
 
-    def save(self, directory):
+    def save_db(self, directory):
         # Output reference tables
-        for table in REFERENCE_TABLES:
+        for table in self._reference_tables:
             results = self.session.query(self.metadata.tables[table]).all()
             data = [row._asdict() for row in results]
             filename = table + '_data.json'
             if len(data) > 0:
                 with open(os.path.join(directory, filename), 'w') as f:
-                    f.write(json.dumps(data, indent=4))
+                    f.write(json.dumps(data, indent=4, default=json_serializer))
 
+        for row in self.query(self.metadata.tables[self._primary_table]):
+            self.save_json(row, directory)
+
+    def save_json(self, name, directory):
         # Output database contents as JSON data into specified directory
-        for row in self.query(self.Sources):
-            filename = row.source.lower().replace(' ', '_') + '_data.json'
-            data = self.inventory(row.source)
-            with open(os.path.join(directory, filename), 'w') as f:
-                f.write(json.dumps(data, indent=4))
+        if isinstance(name, str):
+            source_name = str(name)
+            data = self.inventory(name)
+        else:
+            source_name = str(name.__getattribute__(self._primary_table_key))
+            data = self.inventory(name.__getattribute__(self._primary_table_key))
+
+        filename = source_name.lower().replace(' ', '_') + '_data.json'
+        with open(os.path.join(directory, filename), 'w') as f:
+            f.write(json.dumps(data, indent=4, default=json_serializer))
 
     def load_database(self, directory):
         # From a directory, reload the database
@@ -156,14 +205,14 @@ class Database:
             self.metadata.tables[table].delete().execute()
 
         # Load reference tables first
-        for table in REFERENCE_TABLES:
+        for table in self._reference_tables:
             self.load_table(table, directory)
 
         # Load object data
         for file in os.listdir(directory):
             # Skip reference tables
             core_name = file.replace('_data.json', '')
-            if core_name in REFERENCE_TABLES:
+            if core_name in self._reference_tables:
                 continue
 
             self.load_json(os.path.join(directory, file))
@@ -185,14 +234,14 @@ class Database:
 
         # Loop through the dictionary, adding data to the database.
         # Ensure that Sources is added first
-        source = data['Sources'][0]['source']
-        self.Sources.insert().execute(data['Sources'])
+        source = data[self._primary_table][0][self._primary_table_key]
+        self.metadata.tables[self._primary_table].insert().execute(data[self._primary_table])
         for key, value in data.items():
-            if key == 'Sources':
+            if key == self._primary_table:
                 continue
 
             # Loop over multiple values (eg, Photometry)
             for v in value:
                 temp_dict = v
-                temp_dict['source'] = source
+                temp_dict[self._foreign_key] = source
                 self.metadata.tables[key].insert().execute(temp_dict)
