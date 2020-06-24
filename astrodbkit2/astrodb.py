@@ -19,7 +19,7 @@ except ImportError:
 Base = declarative_base()  # For SQLAlchemy handling
 
 
-def load_connection(connection_string, sqlite_foreign=True):
+def load_connection(connection_string, sqlite_foreign=True, base=None):
     """Return session, base, and engine objects for connecting to the database.
 
     Parameters
@@ -28,6 +28,8 @@ def load_connection(connection_string, sqlite_foreign=True):
         The connection string to connect to the database. The
         connection string should take the form:
         ``dialect+driver://username:password@host:port/database``
+    base : base object
+        Use an existing base class
 
     Returns
     -------
@@ -41,7 +43,9 @@ def load_connection(connection_string, sqlite_foreign=True):
     """
 
     engine = create_engine(connection_string)
-    Base.metadata.bind = engine
+    if not base:
+       base = declarative_base()
+    base.metadata.bind = engine
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -54,7 +58,7 @@ def load_connection(connection_string, sqlite_foreign=True):
     #     event.listen(Base.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS ivoa"))
     #     event.listen(Base.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS tap_schema"))
 
-    return session, Base, engine
+    return session, base, engine
 
 
 def set_sqlite():
@@ -68,7 +72,7 @@ def set_sqlite():
 
 
 def create_database(connection_string):
-    session, base, engine = load_connection(connection_string)
+    session, base, engine = load_connection(connection_string, base=Base)
     # base.metadata.drop_all()  # drop all the tables
     base.metadata.create_all()  # this explicitly create the SQLite file
 
