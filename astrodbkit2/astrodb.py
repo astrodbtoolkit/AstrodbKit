@@ -16,7 +16,9 @@ try:
 except ImportError:
     __version__ = ''
 
-Base = declarative_base()  # For SQLAlchemy handling
+# For SQLAlchemy ORM Declarative mapping
+# User created schema should import and use astrodb.Base so that create_database can properly handle them
+Base = declarative_base()
 
 
 def load_connection(connection_string, sqlite_foreign=True, base=None):
@@ -28,8 +30,8 @@ def load_connection(connection_string, sqlite_foreign=True, base=None):
         The connection string to connect to the database. The
         connection string should take the form:
         ``dialect+driver://username:password@host:port/database``
-    base : base object
-        Use an existing base class
+    base : SQLAlchemy base object
+        Use an existing base class. Default: None (ie, creates a new one)
 
     Returns
     -------
