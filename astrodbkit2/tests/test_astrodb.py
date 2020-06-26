@@ -6,8 +6,8 @@ import pytest
 from astrodbkit2.astrodb import Database, create_database, Base
 from astrodbkit2.schema_example import *
 
-DB_PATH = 'astrodbkit2/tests/temp.db'
-DB_DIR = 'astrodbkit2/tests/tempdata'
+DB_PATH = 'temp.db'
+DB_DIR = 'tempdata'
 
 
 def test_nodatabase():
