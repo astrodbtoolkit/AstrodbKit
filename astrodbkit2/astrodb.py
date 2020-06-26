@@ -267,18 +267,22 @@ class Database:
                 temp_dict[self._foreign_key] = source
                 self.metadata.tables[key].insert().execute(temp_dict)
 
-    def load_database(self, directory):
+    def load_database(self, directory, verbose=False):
         # From a directory, reload the database
 
         # Clear existing database contents
-        for table in self.metadata.tables:
-            self.metadata.tables[table].delete().execute()
+        # reversed(sorted_tables) can help ensure that foreign key dependencies are taken care of first
+        for table in reversed(self.metadata.sorted_tables):
+            if verbose: print(f'Deleting {table.name} table')
+            self.metadata.tables[table.name].delete().execute()
 
         # Load reference tables first
         for table in self._reference_tables:
+            if verbose: print(f'Loading {table} table')
             self.load_table(table, directory)
 
         # Load object data
+        if verbose: print('Loading object tables')
         for file in os.listdir(directory):
             # Skip reference tables
             core_name = file.replace('_data.json', '')
