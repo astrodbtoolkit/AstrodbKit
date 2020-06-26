@@ -30,10 +30,6 @@ class Instruments(Base):
 
 
 # -------------------------------------------------------------------------------------------------------------------
-# Hard-coded enumerations
-
-
-# -------------------------------------------------------------------------------------------------------------------
 # Main tables
 class Sources(Base):
     """ORM for the sources table. This stores the main identifiers for our objects along with ra and dec"""
@@ -59,7 +55,6 @@ class Photometry(Base):
     ucd = Column(String(100))
     magnitude = Column(Float)
     magnitude_error = Column(Float)
-    # system = Column(String(30), ForeignKey('Systems.name', ondelete='cascade'))
     telescope = Column(String(30), ForeignKey('Telescopes.name', ondelete='cascade'))
     instrument = Column(String(30), ForeignKey('Instruments.name', ondelete='cascade'))
     epoch = Column(String(30))

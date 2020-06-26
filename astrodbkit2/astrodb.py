@@ -72,9 +72,19 @@ def set_sqlite():
 
 
 def create_database(connection_string):
+    """
+    Create a database from a schema that utilizes the `astrodbkit2.astrodb.Base` class.
+    Some databases, eg Postgres, must already exist but any tables should be dropped.
+
+    Parameters
+    ----------
+    connection_string : str
+        Connection string to database
+    """
+
     session, base, engine = load_connection(connection_string, base=Base)
     # base.metadata.drop_all()  # drop all the tables
-    base.metadata.create_all()  # this explicitly create the SQLite file
+    base.metadata.create_all()  # this explicitly creates the database
 
 
 def copy_database_schema(source_connection_string, destination_connection_string, sqlite_foreign=False):
@@ -91,9 +101,6 @@ def copy_database_schema(source_connection_string, destination_connection_string
     """
 
     session, srcBase, srcEngine = load_connection(source_connection_string, sqlite_foreign=sqlite_foreign)
-    # srcEngine._metadata = MetaData(bind=srcEngine)
-    # srcEngine._metadata.reflect(srcEngine)  # get columns from existing table
-
     srcMetadata = srcBase.metadata
     srcMetadata.reflect(bind=srcEngine)
 
@@ -138,7 +145,7 @@ class Database:
             Dictionary with table.column type overrides. For example, {'spectra.spectrum': sqlalchemy.types.TEXT()}
             will set the table spectra, column spectrum to be of type TEXT()
         sqlite_foreign : bool
-            Flag to enable/disable use of foreign keys with SQLite
+            Flag to enable/disable use of foreign keys with SQLite. Default: True
         """
 
         self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign)
@@ -172,11 +179,40 @@ class Database:
 
     # Inventory related methods
     def _row_cleanup(self, row):
+        """
+        Handler method to convert a result row to a dictionary but remove the foreign key column
+        as defined in the database initialization. Used internally by `Database._inventory_query`.
+
+        Parameters
+        ----------
+        row :
+            SQLAlchemy row object
+
+        Returns
+        -------
+        row_dict : dict
+            Dictionary version of the row object
+        """
+
         row_dict = row._asdict()
         del row_dict[self._foreign_key]
         return row_dict
 
     def _inventory_query(self, data_dict, table_name, source_name):
+        """
+        Handler method to query database contents for the specified source.
+        Table results are stored as new keys in `data_dict`. Used internally by `Database.inventory`.
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of data to update.
+        table_name : str
+            Table to query
+        source_name : str
+            Source to query on
+        """
+
         table = self.metadata.tables[table_name]
 
         if table_name == self._primary_table:
@@ -192,6 +228,23 @@ class Database:
             data_dict[table_name] = [self._row_cleanup(row) for row in results]
 
     def inventory(self, name, pretty_print=False):
+        """
+        Method to return a dictionary of all information for a given source, matched by name.
+        Each table is a key of this dictionary.
+
+        Parameters
+        ----------
+        name : str
+            Name of the source to search for
+        pretty_print : bool
+            Optionally print out the dictionary contents on screen. Default: False
+
+        Returns
+        -------
+        data_dict : dict
+            Dictionary of all information for the given source.
+        """
+
         data_dict = {}
         # Loop over tables (not reference tables) and gather the information. Start with the primary table, though
         self._inventory_query(data_dict, self._primary_table, name)
@@ -207,12 +260,35 @@ class Database:
 
     # General query methods
     def sql_query(self, query):
-        # Direct SQL query
+        """
+        Wrapper for a direct SQL query.
+
+        Parameters
+        ----------
+        query : str
+            Query to be performed
+
+        Returns
+        -------
+        List of SQLAlchemy results
+        """
+
         return self.engine.execute(query).fetchall()
 
     # Object output methods
     def save_json(self, name, directory):
-        # Output database contents as JSON data into specified directory
+        """
+        Output database contents as JSON data for matched source into specified directory
+
+        Parameters
+        ----------
+        name : str
+            Name of source to match by primary key.
+            Alternatively can also be a row from a query against the source table.
+        directory : str
+            Name of directory in which to save the output JSON
+        """
+
         if isinstance(name, str):
             source_name = str(name)
             data = self.inventory(name)
@@ -225,6 +301,17 @@ class Database:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
     def save_db(self, directory):
+        """
+        Output contents of the database into the specified directory as JSON files.
+        Source objects have individual JSON files with all data for that object.
+        Reference tables have a single JSON for all contents in the table.
+
+        Parameters
+        ----------
+        directory : str
+            Name of directory in which to save the output JSON
+        """
+
         # Output reference tables
         for table in self._reference_tables:
             results = self.session.query(self.metadata.tables[table]).all()
@@ -234,12 +321,23 @@ class Database:
                 with open(os.path.join(directory, filename), 'w') as f:
                     f.write(json.dumps(data, indent=4, default=json_serializer))
 
+        # Output primary objects
         for row in self.query(self.metadata.tables[self._primary_table]):
             self.save_json(row, directory)
 
     # Object input methods
     def load_table(self, table, directory):
-        # Load a reference table, expects there to be a file of the form [table]_data.json
+        """
+        Load a reference table to the database, expects there to be a file of the form [table]_data.json
+
+        Parameters
+        ----------
+        table : str
+            Name of table to load. Table must already exist in the schema.
+        directory : str
+            Name of directory containing the JSON file
+        """
+
         filename = os.path.join(directory, table+'_data.json')
         if os.path.exists(filename):
             with open(filename, 'r') as f:
@@ -249,7 +347,15 @@ class Database:
             print(f'{table}_data.json not found.')
 
     def load_json(self, filename):
-        # Load a single object
+        """
+        Load single source JSON into the database
+
+        Parameters
+        ----------
+        filename : str
+            Name of directory containing the JSON file
+        """
+
         with open(filename, 'r') as f:
             data = json.load(f)
 
@@ -268,7 +374,17 @@ class Database:
                 self.metadata.tables[key].insert().execute(temp_dict)
 
     def load_database(self, directory, verbose=False):
-        # From a directory, reload the database
+        """
+        Reload entire database from a directory of JSON files.
+        Note that this will first clear existing tables.
+
+        Parameters
+        ----------
+        directory : str
+            Name of directory containing the JSON files
+        verbose : bool
+            Flag to enable diagnostic messages
+        """
 
         # Clear existing database contents
         # reversed(sorted_tables) can help ensure that foreign key dependencies are taken care of first
