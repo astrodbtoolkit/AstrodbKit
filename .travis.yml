@@ -148,9 +148,9 @@ install:
         source ci-helpers/travis/setup_conda.sh;
       fi
 
-script:
-    - pip install tox
-    - tox $TOXARGS -- $TOXPOSARGS
+#script:
+#    - pip install tox
+#    - tox $TOXARGS -- $TOXPOSARGS
 
 after_success:
     # If coveralls.io is set up for this package, uncomment the two lines below.
