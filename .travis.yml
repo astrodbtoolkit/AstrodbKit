@@ -152,5 +152,5 @@ after_success:
       - pip install codecov
       - pwd
       - ls -a
-      - coverage xml -i
+      - ls -a .tmp/py38-test-cov
       - codecov
