@@ -7,14 +7,15 @@ from astrodbkit2.astrodb import Database, create_database, Base
 from astrodbkit2.schema_example import *
 
 DB_PATH = 'temp.db'
-DB_DIR = 'tempdata'
-
 
 def test_nodatabase():
     connection_string = 'sqlite:///:memory:'
     with pytest.raises(RuntimeError, match='Create database'):
         db = Database(connection_string)
 
+@pytest.fixture(scope="module")
+def db_dir(tmpdir_factory):
+    return tmpdir_factory.mktemp("data")
 
 @pytest.fixture(scope="module")
 def db():
@@ -31,7 +32,6 @@ def db():
     assert 'source' in [c.name for c in db.Sources.columns]
 
     return db
-
 
 def test_add_data(db):
     # Load example data to the database
@@ -80,13 +80,11 @@ def test_add_data(db):
                   }]
     db.Photometry.insert().execute(phot_data)
 
-
 def test_query_data(db):
     # Perform some example queries and confirm the results
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Sources).count() == 1
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
-
 
 def test_inventory(db):
     # Test the inventory method
@@ -106,29 +104,27 @@ def test_inventory(db):
 
     assert db.inventory('2MASS J13571237+1428398') == test_dict
 
-
-def test_save_db(db):
+def test_save_db(db, db_dir):
     # Test saving the database to JSON files
 
     # Clear temporary directory first
-    if not os.path.exists(DB_DIR):
-        os.mkdir(DB_DIR)
-    for file in os.listdir(DB_DIR):
-        os.remove(os.path.join(DB_DIR, file))
+    # if not os.path.exists(DB_DIR):
+    #     os.mkdir(DB_DIR)
+    for file in os.listdir(db_dir):
+        os.remove(os.path.join(db_dir, file))
 
-    db.save_db(DB_DIR)
+    db.save_db(db_dir)
 
     # Check JSON data
-    assert os.path.exists(os.path.join(DB_DIR, '2mass_J13571237+1428398_data.json'))
-    assert os.path.exists(os.path.join(DB_DIR, 'Publications_data.json'))
+    assert os.path.exists(os.path.join(db_dir, '2mass_J13571237+1428398_data.json'))
+    assert os.path.exists(os.path.join(db_dir, 'Publications_data.json'))
 
     # Load source and confirm it is the same
-    with open(os.path.join(DB_DIR, '2mass_J13571237+1428398_data.json'), 'r') as f:
+    with open(os.path.join(db_dir, '2mass_J13571237+1428398_data.json'), 'r') as f:
         data = json.load(f)
     assert data == db.inventory('2MASS J13571237+1428398')
 
-
-def test_load_database(db):
+def test_load_database(db, db_dir):
     # Test loading database from JSON files
 
     # First clear some of the tables
@@ -136,16 +132,17 @@ def test_load_database(db):
     db.Sources.delete().execute()
 
     # Reload the database and check DB contents
-    db.load_database(DB_DIR)
+    assert os.path.exists(db_dir)
+    assert os.path.exists(os.path.join(db_dir, 'Publications_data.json'))
+    db.load_database(db_dir)
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 2
     assert db.query(db.Sources).count() == 1
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Clear temporary directory and files
-    for file in os.listdir(DB_DIR):
-        os.remove(os.path.join(DB_DIR, file))
-
+    for file in os.listdir(db_dir):
+        os.remove(os.path.join(db_dir, file))
 
 def test_remove_database(db):
     if os.path.exists(DB_PATH):
