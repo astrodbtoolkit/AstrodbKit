@@ -124,10 +124,10 @@ def test_save_db(db, db_dir):
 
     # Check JSON data
     assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
-    assert os.path.exists(os.path.join(db_dir, '2mass_J13571237+1428398.json'))
+    assert os.path.exists(os.path.join(db_dir, '2mass_j13571237+1428398.json'))
 
     # Load source and confirm it is the same
-    with open(os.path.join(db_dir, '2mass_J13571237+1428398.json'), 'r') as f:
+    with open(os.path.join(db_dir, '2mass_j13571237+1428398.json'), 'r') as f:
         data = json.load(f)
     assert data == db.inventory('2MASS J13571237+1428398')
 
