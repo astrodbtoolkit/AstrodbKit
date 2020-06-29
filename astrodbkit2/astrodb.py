@@ -298,7 +298,7 @@ class Database:
             source_name = str(name.__getattribute__(self._primary_table_key))
             data = self.inventory(name.__getattribute__(self._primary_table_key))
 
-        filename = source_name.lower().replace(' ', '_') + '_data.json'
+        filename = source_name.lower().replace(' ', '_') + '.json'
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
@@ -318,7 +318,7 @@ class Database:
         for table in self._reference_tables:
             results = self.session.query(self.metadata.tables[table]).all()
             data = [row._asdict() for row in results]
-            filename = table + '_data.json'
+            filename = table + '.json'
             if len(data) > 0:
                 with open(os.path.join(directory, filename), 'w') as f:
                     f.write(json.dumps(data, indent=4, default=json_serializer))
@@ -330,7 +330,7 @@ class Database:
     # Object input methods
     def load_table(self, table, directory):
         """
-        Load a reference table to the database, expects there to be a file of the form [table]_data.json
+        Load a reference table to the database, expects there to be a file of the form [table].json
 
         Parameters
         ----------
@@ -340,13 +340,13 @@ class Database:
             Name of directory containing the JSON file
         """
 
-        filename = os.path.join(directory, table+'_data.json')
+        filename = os.path.join(directory, table+'.json')
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 data = json.load(f)
                 self.metadata.tables[table].insert().execute(data)
         else:
-            print(f'{table}_data.json not found.')
+            print(f'{table}.json not found.')
 
     def load_json(self, filename):
         """
@@ -403,7 +403,7 @@ class Database:
         if verbose: print('Loading object tables')
         for file in os.listdir(directory):
             # Skip reference tables
-            core_name = file.replace('_data.json', '')
+            core_name = file.replace('.json', '')
             if core_name in self._reference_tables:
                 continue
 
