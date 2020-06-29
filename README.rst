@@ -5,6 +5,11 @@ Astronomical database handler code
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
+.. image:: https://travis-ci.org/dr-rodriguez/AstrodbKit2.svg?branch=main
+    :target: https://travis-ci.org/dr-rodriguez/AstrodbKit2
+
+.. image:: https://coveralls.io/repos/github/dr-rodriguez/AstrodbKit2/badge.svg?branch=main
+    :target: https://coveralls.io/github/dr-rodriguez/AstrodbKit2?branch=main
 
 License
 -------
@@ -19,7 +24,7 @@ more information.
 Contributing
 ------------
 
-We love contributions! AstrodbKit2 is open source,
+We love contributions! `AstrodbKit2 <https://astrodbkit2.readthedocs.io/en/latest/>`_ is open source,
 built on open source, and we'd love to have you hang out in our community.
 
 **Imposter syndrome disclaimer**: We want your help. No, really.
