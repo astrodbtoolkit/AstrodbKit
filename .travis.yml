@@ -150,5 +150,7 @@ after_success:
 #     - coveralls -v
     # If codecov is set up for this package, uncomment the two lines below
       - pip install codecov
+      - ls
+      - pwd
       - coverage xml -i
       - codecov
