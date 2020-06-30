@@ -8,8 +8,8 @@ Astronomical database handler code
 .. image:: https://travis-ci.org/dr-rodriguez/AstrodbKit2.svg?branch=main
     :target: https://travis-ci.org/dr-rodriguez/AstrodbKit2
 
-.. image:: https://coveralls.io/repos/github/dr-rodriguez/AstrodbKit2/badge.svg?branch=main
-    :target: https://coveralls.io/github/dr-rodriguez/AstrodbKit2?branch=main
+.. image:: https://codecov.io/gh/dr-rodriguez/AstrodbKit2/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/dr-rodriguez/AstrodbKit2
 
 License
 -------
