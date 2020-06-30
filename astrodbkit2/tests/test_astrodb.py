@@ -3,7 +3,7 @@
 import os
 import json
 import pytest
-from astrodbkit2.astrodb import Database, create_database, Base
+from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
 
 DB_PATH = 'temp.db'
@@ -155,6 +155,23 @@ def test_load_database(db, db_dir):
         os.remove(os.path.join(db_dir, file))
 
 
+def test_copy_database_schema():
+    connection_1 = 'sqlite:///' + DB_PATH
+    connection_2 = 'sqlite:///second.db'
+    copy_database_schema(connection_1, connection_2)
+
+    db2 = Database(connection_2)
+    assert db2
+    assert 'source' in [c.name for c in db2.Sources.columns]
+
+    # Close the database and delete the temporary secondary file
+    db2.engine.dispose()
+    if os.path.exists('second.db'):
+        os.remove('second.db')
+
+
 def test_remove_database(db):
+    db.session.close()
+    db.engine.dispose()
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
