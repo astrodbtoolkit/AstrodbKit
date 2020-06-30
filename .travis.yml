@@ -149,9 +149,13 @@ after_success:
 #     - pip install coveralls
 #     - coveralls -v
     # If codecov is set up for this package, uncomment the two lines below
-      - pip install codecov
-      - pwd
-      - ls -a
-      - ls -a .tmp/py38-test-cov
-      - cd .tmp/py38-test-cov
-      - codecov
+      - if [[ $TOXENV == *-cov ]]; then
+        pip install codecov;
+        codecov --gcov-glob "*cextern*";
+        fi
+#      - pip install codecov
+#      - pwd
+#      - ls -a
+#      - ls -a .tmp/py38-test-cov
+#      - cd .tmp/py38-test-cov
+#      - codecov

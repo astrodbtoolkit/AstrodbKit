@@ -30,6 +30,8 @@ def load_connection(connection_string, sqlite_foreign=True, base=None):
         The connection string to connect to the database. The
         connection string should take the form:
         ``dialect+driver://username:password@host:port/database``
+    sqlite_foreign : bool
+        Flag to enable foreign key checks for SQLite. Default: True
     base : SQLAlchemy base object
         Use an existing base class. Default: None (ie, creates a new one)
 
@@ -100,6 +102,8 @@ def copy_database_schema(source_connection_string, destination_connection_string
         Connection string to source database
     destination_connection_string : str
         Connection string to destination database
+    sqlite_foreign : bool
+        Flag to enable foreign key checks for SQLite; passed to `load_connection`. Default: False
     """
 
     session, srcBase, srcEngine = load_connection(source_connection_string, sqlite_foreign=sqlite_foreign)
