@@ -150,8 +150,9 @@ after_success:
 #     - coveralls -v
     # If codecov is set up for this package, uncomment the two lines below
       - if [[ $TOXENV == *-cov ]]; then
-        pip install codecov;
-        codecov --gcov-glob "*cextern*";
+          pip install codecov;
+          cd .tmp/$TOXENV;
+          codecov;
         fi
 #      - pip install codecov
 #      - pwd
