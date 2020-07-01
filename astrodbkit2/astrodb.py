@@ -91,7 +91,8 @@ def create_database(connection_string):
     base.metadata.create_all()  # this explicitly creates the database
 
 
-def copy_database_schema(source_connection_string, destination_connection_string, sqlite_foreign=False):
+def copy_database_schema(source_connection_string, destination_connection_string, sqlite_foreign=False,
+                         ignore_tables=[], copy_data=False):
     """
     Copy a database schema (ie, all tables and columns) from one database to another
     Adapted from https://gist.github.com/pawl/9935333
@@ -104,22 +105,37 @@ def copy_database_schema(source_connection_string, destination_connection_string
         Connection string to destination database
     sqlite_foreign : bool
         Flag to enable foreign key checks for SQLite; passed to `load_connection`. Default: False
+    ignore_tables : list
+        List of tables to not copy
+    copy_data : bool
+        Flag to enable copying data to the new database. Default: False
     """
 
-    session, srcBase, srcEngine = load_connection(source_connection_string, sqlite_foreign=sqlite_foreign)
-    srcMetadata = srcBase.metadata
-    srcMetadata.reflect(bind=srcEngine)
+    src_session, src_base, src_engine = load_connection(source_connection_string, sqlite_foreign=sqlite_foreign)
+    src_metadata = src_base.metadata
+    src_metadata.reflect(bind=src_engine)
 
-    session, base, destEngine = load_connection(destination_connection_string, sqlite_foreign=sqlite_foreign)
-    destEngine._metadata = MetaData(bind=destEngine)
+    dest_session, dest_base, dest_engine = load_connection(destination_connection_string, sqlite_foreign=sqlite_foreign)
+    dest_metadata = dest_base.metadata
+    dest_metadata.reflect(bind=dest_engine)
 
-    for table in srcMetadata.tables:
-        destTable = Table(table, destEngine._metadata)
+    for table in src_metadata.sorted_tables:
+        if table.name in ignore_tables:
+            continue
 
-        # copy schema and create newTable from oldTable
-        for column in srcMetadata.tables[table].columns:
-            destTable.append_column(column.copy())
-        destTable.create()
+        dest_table = Table(table.name, dest_metadata)
+
+        # Copy schema and create newTable from oldTable
+        for column in src_metadata.tables[table.name].columns:
+            dest_table.append_column(column.copy())
+        dest_table.create()
+
+        # Copy data, row by row
+        if copy_data:
+            table_data = src_session.query(src_metadata.tables[table.name]).all()
+            for row in table_data:
+                dest_session.execute(dest_table.insert(row))
+            dest_session.commit()
 
 
 class Database:

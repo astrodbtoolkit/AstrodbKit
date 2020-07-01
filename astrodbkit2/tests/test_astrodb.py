@@ -158,11 +158,17 @@ def test_load_database(db, db_dir):
 def test_copy_database_schema():
     connection_1 = 'sqlite:///' + DB_PATH
     connection_2 = 'sqlite:///second.db'
-    copy_database_schema(connection_1, connection_2)
+    if os.path.exists('second.db'):
+        os.remove('second.db')
+
+    copy_database_schema(connection_1, connection_2, copy_data=True)
 
     db2 = Database(connection_2)
     assert db2
     assert 'source' in [c.name for c in db2.Sources.columns]
+    assert db2.query(db2.Sources).count() == 1
+    assert db2.query(db2.Publications).count() == 2
+    assert db2.query(db2.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Close the database and delete the temporary secondary file
     db2.engine.dispose()
