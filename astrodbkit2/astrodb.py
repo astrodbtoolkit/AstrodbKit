@@ -306,7 +306,7 @@ class Database:
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_db(self, directory):
+    def save_db(self, directory, clear_first=True):
         """
         Output contents of the database into the specified directory as JSON files.
         Source objects have individual JSON files with all data for that object.
@@ -316,7 +316,14 @@ class Database:
         ----------
         directory : str
             Name of directory in which to save the output JSON
+        clear_first : bool
+            First clear the directory of all existing JSON (useful to capture DB deletions). Default: True
         """
+
+        # Clear existing files first from that directory
+        if clear_first:
+            for filename in os.listdir(directory):
+                os.remove(os.path.join(directory, filename))
 
         # Output reference tables
         for table in self._reference_tables:
