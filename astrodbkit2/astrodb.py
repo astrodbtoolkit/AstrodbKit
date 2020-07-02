@@ -4,7 +4,10 @@ __all__ = ['__version__', 'Database', 'or_', 'and_', 'create_database']
 
 import os
 import json
+import pandas as pd
+from astropy.table import Table as AstropyTable
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table, MetaData
@@ -19,6 +22,26 @@ except ImportError:
 # For SQLAlchemy ORM Declarative mapping
 # User created schema should import and use astrodb.Base so that create_database can properly handle them
 Base = declarative_base()
+
+
+class AstrodbQuery(Query):
+    # Subclassing the Query class to add more functionality.
+    # See: https://stackoverflow.com/questions/15936111/sqlalchemy-can-you-add-custom-methods-to-the-query-object
+    def astropy(self):
+        # Allow SQLAlchemy query output to be formatted as an astropy Table
+        temp = self.all()
+        if len(temp) > 0:
+            t = AstropyTable(rows=temp, names=temp[0].keys())
+        else:
+            t = AstropyTable(temp)
+        return t
+
+    def table(self):
+        # Alternative for getting astropy Table
+        return self.astropy()
+
+    def pandas(self):
+        return pd.DataFrame(self.all())
 
 
 def load_connection(connection_string, sqlite_foreign=True, base=None):
@@ -50,7 +73,7 @@ def load_connection(connection_string, sqlite_foreign=True, base=None):
     if not base:
        base = declarative_base()
     base.metadata.bind = engine
-    Session = sessionmaker(bind=engine)
+    Session = sessionmaker(bind=engine, query_cls=AstrodbQuery)
     session = Session()
 
     # Enable foreign key checks in SQLite

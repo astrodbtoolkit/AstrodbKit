@@ -3,6 +3,8 @@
 import os
 import json
 import pytest
+import pandas as pd
+from astropy.table import Table
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
 
@@ -90,6 +92,24 @@ def test_query_data(db):
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Sources).count() == 1
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
+
+
+def test_query_formats(db):
+    # Check that the query subclass is working properly
+    t = db.query(db.Sources).astropy()
+    assert len(t) == 1
+    assert isinstance(t, Table)
+    t = db.query(db.Sources).table()
+    assert isinstance(t, Table)
+    t = db.query(db.Instruments).table()
+    assert len(t) == 0
+    assert isinstance(t, Table)
+    t = db.query(db.Sources).pandas()
+    assert len(t) == 1
+    assert isinstance(t, pd.DataFrame)
+    t = db.query(db.Instruments).pandas()
+    assert len(t) == 0
+    assert isinstance(t, pd.DataFrame)
 
 
 def test_inventory(db):
