@@ -341,7 +341,8 @@ class Database:
             source_name = str(name.__getattribute__(self._primary_table_key))
             data = self.inventory(name.__getattribute__(self._primary_table_key))
 
-        filename = source_name.lower().replace(' ', '_') + '.json'
+        # Clean up spaces and other special characters
+        filename = source_name.lower().replace(' ', '_').replace('*', '').strip() + '.json'
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
