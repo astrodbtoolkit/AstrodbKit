@@ -94,6 +94,19 @@ def test_query_data(db):
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
 
+def test_sql_query(db):
+    # Perform direct SQLite queries
+    t = db.sql_query('SELECT * FROM Sources', format='default')
+    assert len(t) == 1
+    assert isinstance(t, list)
+    t = db.sql_query('SELECT * FROM Sources', format='astropy')
+    assert isinstance(t, Table)
+    t = db.sql_query('SELECT * FROM Sources', format='table')
+    assert isinstance(t, Table)
+    t = db.sql_query('SELECT * FROM Sources', format='pandas')
+    assert isinstance(t, pd.DataFrame)
+
+
 def test_query_formats(db):
     # Check that the query subclass is working properly
     t = db.query(db.Sources).astropy()

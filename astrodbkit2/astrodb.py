@@ -304,7 +304,7 @@ class Database:
         return data_dict
 
     # General query methods
-    def sql_query(self, query):
+    def sql_query(self, query, format='default'):
         """
         Wrapper for a direct SQL query.
 
@@ -312,13 +312,26 @@ class Database:
         ----------
         query : str
             Query to be performed
+        format : str
+            Format in which to return the results (pandas, astropy/table, default)
 
         Returns
         -------
         List of SQLAlchemy results
         """
 
-        return self.engine.execute(query).fetchall()
+        temp = self.engine.execute(query).fetchall()
+        if format.lower() in ('astropy','table'):
+            if len(temp) > 0:
+                t = AstropyTable(rows=temp, names=temp[0].keys())
+            else:
+                t = AstropyTable(temp)
+        elif format.lower() == 'pandas':
+            t = pd.DataFrame(temp)
+        else:
+            t = temp
+
+        return t
 
     # Object output methods
     def save_json(self, name, directory):
