@@ -4,8 +4,15 @@ coverage:
   precision: 2
   status:
     project:
+      # full project
       default:
-        # basic
         target: 70%
         threshold: 5%
         base: auto
+    patch:
+      # just the lines changed
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        only_pulls: false

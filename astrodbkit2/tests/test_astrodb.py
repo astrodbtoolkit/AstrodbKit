@@ -105,6 +105,9 @@ def test_sql_query(db):
     assert isinstance(t, Table)
     t = db.sql_query('SELECT * FROM Sources', format='pandas')
     assert isinstance(t, pd.DataFrame)
+    t = db.sql_query('SELECT * FROM Instruments', format='astropy')
+    assert len(t) == 0
+    assert isinstance(t, Table)
 
 
 def test_query_formats(db):
