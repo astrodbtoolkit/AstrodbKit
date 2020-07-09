@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table, MetaData
 from sqlalchemy import or_, and_
+from sqlalchemy.sql.functions import coalesce
 from .utils import json_serializer
 
 try:
@@ -222,6 +223,21 @@ class Database:
                 tab, col = k.split('.')
                 self.metadata.tables[tab].columns[col].type = v
 
+    # Generic methods
+    def _handle_format(self, temp, format):
+        # Internal method to handle SQLAlchemy output and format it
+        if format.lower() in ('astropy', 'table'):
+            if len(temp) > 0:
+                results = AstropyTable(rows=temp, names=temp[0].keys())
+            else:
+                results = AstropyTable(temp)
+        elif format.lower() == 'pandas':
+            results = pd.DataFrame(temp)
+        else:
+            results = temp
+
+        return results
+
     # Inventory related methods
     def _row_cleanup(self, row):
         """
@@ -303,6 +319,82 @@ class Database:
 
         return data_dict
 
+    # Text query methods
+    def search_object(self, name, output_table=None, resolve_simbad=False,
+                      table_names={'Sources': 'source', 'Names': 'other_name'}, format='default'):
+        """
+        Query the database for the object specified. By default will return the primary table,
+        but this can be specified. Users can also request to resolve the object name via Simbad and query against
+        all Simbad names.
+
+        Parameters
+        ----------
+        name : str
+            Object name to match
+        output_table : str
+            Name of table to match. Default: primary table (eg, Sources)
+        resolve_simbad : bool
+            Get additional names from Simbad. Default: False
+        table_names : dict
+            Dictionary of tables to search for name information. Should be of the form table name: column name.
+            Default: {'Sources': 'source', 'Names': 'other_name'}
+        format : str
+            Format to return results in (pandas, astropy/table, default)
+
+        Returns
+        -------
+        List of SQLAlchemy results
+        """
+
+        if output_table is None:
+            output_table = self._primary_table
+
+        match_column = self._foreign_key
+        if output_table == self._primary_table:
+            match_column = self._primary_table_key
+
+        if resolve_simbad:
+            # TODO: Implement an astroquery Simbad lookup. Likely will want this in utils.py
+            print('Not currently implemented')
+            pass
+
+        # Turn name into a list
+        if not isinstance(name, list):
+            name = [name]
+
+        # Verify provided tables exist in database
+        for k in table_names.keys():
+            assert k in self.metadata.tables, f'ERROR: Table {k} is not in the database'
+
+        # Get source for objects that match the provided names
+        # The following will build the filters required to query all specified tables
+        # approximately by case-insensitive names. It will then coalesce the individual values into a single column
+        # for use in the next step.
+        filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
+                   for k, v in table_names.items()
+                   for n in name]
+        output_to_match = []
+        for k in table_names.keys():
+            if k == self._primary_table:
+                output_to_match.append(self.metadata.tables[k].columns[self._primary_table_key])
+            else:
+                output_to_match.append(self.metadata.tables[k].columns[self._foreign_key])
+
+        matched_names = self.query(coalesce(*output_to_match)).\
+            filter(or_(*filters)).\
+            distinct().\
+            all()
+        matched_names = [s[0] for s in matched_names]
+
+        # Join the matched sources with the desired table
+        temp = self.query(self.metadata.tables[output_table]).\
+            filter(self.metadata.tables[output_table].columns[match_column].in_(matched_names)).\
+            all()
+
+        results = self._handle_format(temp, format)
+
+        return results
+
     # General query methods
     def sql_query(self, query, format='default'):
         """
@@ -321,17 +413,8 @@ class Database:
         """
 
         temp = self.engine.execute(query).fetchall()
-        if format.lower() in ('astropy','table'):
-            if len(temp) > 0:
-                t = AstropyTable(rows=temp, names=temp[0].keys())
-            else:
-                t = AstropyTable(temp)
-        elif format.lower() == 'pandas':
-            t = pd.DataFrame(temp)
-        else:
-            t = temp
 
-        return t
+        return self._handle_format(temp, format)
 
     # Object output methods
     def save_json(self, name, directory):
