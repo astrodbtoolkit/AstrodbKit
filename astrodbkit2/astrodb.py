@@ -10,9 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
-from sqlalchemy import event, create_engine, Table, MetaData
+from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
-from sqlalchemy.sql.functions import coalesce
 from .utils import json_serializer
 
 try:
