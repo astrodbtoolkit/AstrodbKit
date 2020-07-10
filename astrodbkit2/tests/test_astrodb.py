@@ -7,6 +7,11 @@ import pandas as pd
 from astropy.table import Table
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
+try:
+    import mock
+except ImportError:
+    from unittest import mock
+
 
 DB_PATH = 'temp.db'
 
@@ -96,7 +101,8 @@ def test_query_data(db):
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
 
-def test_search_object(db):
+@mock.patch('astrodbkit2.astrodb.get_simbad_names', return_value=['fake'])
+def test_search_object(mock_simbad, db):
     # Use the search_object method to do partial string searching
 
     t = db.search_object('nothing')
@@ -107,6 +113,9 @@ def test_search_object(db):
     # Search but only consider the Sources.source column
     t = db.search_object('penguin', table_names={'Sources': 'source'})
     assert len(t) == 0
+    # As before, but now resolve names with Simbad which will allow me to match 'fake'
+    t = db.search_object('penguin', resolve_simbad=True, table_names={'Sources': 'source'})
+    assert len(t) == 1
 
     # Search but return Photometry
     t = db.search_object('1357', output_table='Photometry')

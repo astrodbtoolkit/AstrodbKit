@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
-from .utils import json_serializer
+from .utils import json_serializer, get_simbad_names
 
 try:
     from .version import version as __version__
@@ -356,10 +356,11 @@ class Database:
         if output_table == self._primary_table:
             match_column = self._primary_table_key
 
+        # Query Simbad to get additional names and join them to list to search
         if resolve_simbad:
-            # TODO: Implement an astroquery Simbad lookup. Likely will want this in utils.py
-            print('Not currently implemented')
-            pass
+            simbad_names = get_simbad_names(name)
+            name = list(set(simbad_names + [name]))
+            print(f'Including Simbad names, searching for: {name}')
 
         # Turn name into a list
         if not isinstance(name, list):
