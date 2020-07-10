@@ -58,7 +58,8 @@ def test_add_data(db):
     sources_data = [{'ra': 209.301675, 'dec': 14.477722,
                      'source': '2MASS J13571237+1428398',
                      'reference': 'Schm10',
-                     'shortname': '1357+1428'}]
+                     'shortname': '1357+1428'},
+                    {'ra': 123, 'dec': -32, 'source': 'FAKE', 'reference': 'Schm10', 'shortname': 'FAKE'}]
     db.Sources.insert().execute(sources_data)
 
     # Additional names
@@ -66,6 +67,7 @@ def test_add_data(db):
                    'other_name': 'SDSS J135712.40+142839.8'},
                   {'source': '2MASS J13571237+1428398',
                    'other_name': '2MASS J13571237+1428398'},
+                  {'source': 'FAKE', 'other_name': 'Penguin'}
                   ]
     db.Names.insert().execute(names_data)
 
@@ -90,14 +92,38 @@ def test_add_data(db):
 def test_query_data(db):
     # Perform some example queries and confirm the results
     assert db.query(db.Publications).count() == 2
-    assert db.query(db.Sources).count() == 1
+    assert db.query(db.Sources).count() == 2
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
+
+
+def test_search_object(db):
+    # Use the search_object method to do partial string searching
+
+    t = db.search_object('nothing')
+    assert len(t) == 0
+    t = db.search_object('engu')
+    assert len(t) == 1
+
+    # Search but only consider the Sources.source column
+    t = db.search_object('penguin', table_names={'Sources': 'source'})
+    assert len(t) == 0
+
+    # Search but return Photometry
+    t = db.search_object('1357', output_table='Photometry')
+    assert len(t) == 2
+
+    # Two searches providing tables that do not exist
+    with pytest.raises(RuntimeError):
+        t = db.search_object('fake', output_table='NOTABLE')
+    with pytest.raises(RuntimeError):
+        t = db.search_object('fake', table_names={'NOTABLE': 'nocolumn'})
 
 
 def test_sql_query(db):
     # Perform direct SQLite queries
+    # Includes testing of _handle_format implicitly
     t = db.sql_query('SELECT * FROM Sources', format='default')
-    assert len(t) == 1
+    assert len(t) == 2
     assert isinstance(t, list)
     t = db.sql_query('SELECT * FROM Sources', format='astropy')
     assert isinstance(t, Table)
@@ -113,7 +139,7 @@ def test_sql_query(db):
 def test_query_formats(db):
     # Check that the query subclass is working properly
     t = db.query(db.Sources).astropy()
-    assert len(t) == 1
+    assert len(t) == 2
     assert isinstance(t, Table)
     t = db.query(db.Sources).table()
     assert isinstance(t, Table)
@@ -121,7 +147,7 @@ def test_query_formats(db):
     assert len(t) == 0
     assert isinstance(t, Table)
     t = db.query(db.Sources).pandas()
-    assert len(t) == 1
+    assert len(t) == 2
     assert isinstance(t, pd.DataFrame)
     t = db.query(db.Instruments).pandas()
     assert len(t) == 0
@@ -183,7 +209,7 @@ def test_load_database(db, db_dir):
     db.load_database(db_dir, verbose=True)
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 2
-    assert db.query(db.Sources).count() == 1
+    assert db.query(db.Sources).count() == 2
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Clear temporary directory and files
@@ -202,7 +228,7 @@ def test_copy_database_schema():
     db2 = Database(connection_2)
     assert db2
     assert 'source' in [c.name for c in db2.Sources.columns]
-    assert db2.query(db2.Sources).count() == 1
+    assert db2.query(db2.Sources).count() == 2
     assert db2.query(db2.Publications).count() == 2
     assert db2.query(db2.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 

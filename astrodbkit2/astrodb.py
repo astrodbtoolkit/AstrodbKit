@@ -321,7 +321,8 @@ class Database:
 
     # Text query methods
     def search_object(self, name, output_table=None, resolve_simbad=False,
-                      table_names={'Sources': 'source', 'Names': 'other_name'}, format='default'):
+                      table_names={'Sources': 'source', 'Names': 'other_name', 'Sources': 'shortname'},
+                      format='default'):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -346,8 +347,11 @@ class Database:
         List of SQLAlchemy results
         """
 
+        # Set table to output and verify it exists
         if output_table is None:
             output_table = self._primary_table
+        if output_table not in self.metadata.tables:
+            raise RuntimeError(f'Table {output_table} is not in the database')
 
         match_column = self._foreign_key
         if output_table == self._primary_table:
@@ -364,27 +368,30 @@ class Database:
 
         # Verify provided tables exist in database
         for k in table_names.keys():
-            assert k in self.metadata.tables, f'ERROR: Table {k} is not in the database'
+            if k not in self.metadata.tables:
+                raise RuntimeError(f'Table {k} is not in the database')
 
         # Get source for objects that match the provided names
         # The following will build the filters required to query all specified tables
-        # approximately by case-insensitive names. It will then coalesce the individual values into a single column
-        # for use in the next step.
-        filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
-                   for k, v in table_names.items()
-                   for n in name]
-        output_to_match = []
-        for k in table_names.keys():
-            if k == self._primary_table:
-                output_to_match.append(self.metadata.tables[k].columns[self._primary_table_key])
-            else:
-                output_to_match.append(self.metadata.tables[k].columns[self._foreign_key])
+        # approximately by case-insensitive names.
+        # This is not really optimized as it does separate DB calls,
+        # but is the simpler setup and at our scale is sufficient
+        matched_names = []
+        for k, v in table_names.items():
+            filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
+                       for n in name]
 
-        matched_names = self.query(coalesce(*output_to_match)).\
-            filter(or_(*filters)).\
-            distinct().\
-            all()
-        matched_names = [s[0] for s in matched_names]
+            # Column to be returned
+            if k == self._primary_table:
+                output_to_match = self.metadata.tables[k].columns[self._primary_table_key]
+            else:
+                output_to_match = self.metadata.tables[k].columns[self._foreign_key]
+
+            temp = self.query(output_to_match).\
+                filter(or_(*filters)).\
+                distinct().\
+                all()
+            matched_names += [s[0] for s in temp]
 
         # Join the matched sources with the desired table
         temp = self.query(self.metadata.tables[output_table]).\
