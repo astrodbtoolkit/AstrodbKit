@@ -11,6 +11,11 @@ Astronomical database handler code
 .. image:: https://codecov.io/gh/dr-rodriguez/AstrodbKit2/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/dr-rodriguez/AstrodbKit2
 
+AstrodbKit2 is an astronomical database handler code built on top of SQLAlchemy.
+This is built to work with the `SIMPLE database <https://github.com/kelle/SIMPLE>`_, though
+similarly constructed databases will work.
+Documentation is available at `ReadTheDocs <https://astrodbkit2.readthedocs.io/en/latest/>`_.
+
 License
 -------
 

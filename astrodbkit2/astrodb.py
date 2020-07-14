@@ -195,8 +195,11 @@ class Database:
 
         self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign)
 
-        # Convenience method
+        # Convenience methods
         self.query = self.session.query
+
+        self.save_database = self.save_db
+        self.load_db = self.load_database
 
         # Prep the tables
         self.metadata = self.base.metadata
