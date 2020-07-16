@@ -3,13 +3,13 @@ AstrodbKit2 Documentation
 *************************
 
 AstrodbKit2 is an astronomical database handler code built on top of SQLAlchemy.
-This is built to work with the `SIMPLE database <https://github.com/kelle/SIMPLE>`_, though
-similarly constructed databases will work.
-This is inspired from original **astrodbkit**, which is hardcoded for the SQLite BDNYC database.
-
 The goal behind this code is to provide SQLAlchemy's
 powerful `Object Relational Mapping (ORM) <https://docs.sqlalchemy.org/en/13/orm/>`_
 infrastructure to access astronomical database contents regardless of the underlying architecture.
+
+This was designed to work with the `SIMPLE database <https://github.com/kelle/SIMPLE>`_, though
+similar databases will work.
+**Astrodbkit2** is inspired from the original **astrodbkit**, which is hardcoded for the SQLite BDNYC database.
 
 Getting Started
 ===============
@@ -40,7 +40,7 @@ Accessing the Database
 ======================
 
 To start using the database, launch Python, import the module,
-then initialize the database with the :py:class:`astrodb.Database()` class like so::
+then initialize the database with the :py:class:`astrodbkit2.astrodb.Database()` class like so::
 
     from astrodbkit2.astrodb import Database
 
@@ -64,7 +64,7 @@ This is how SIMPLE is currently version controlled. To load a database of this f
     db.load_database(db_dir)
 
 .. note:: Database contents are cleared when loading from JSON files to ensure that the database only contains
-          sources from on-disk files. We describe later how to use the :py:meth:`~astrodb.Database.save_db` method
+          sources from on-disk files. We describe later how to use the :py:meth:`~astrodbkit2.astrodb.Database.save_db` method
           to produce JSON files from the existing database contents.
 
 Querying the Database
@@ -76,7 +76,7 @@ This allows for a more python approach to writing queries. There are also method
 Exploring the Schema
 --------------------
 
-The database schema is accessible via the :py:meth:`~astrodb.Database.metadata` attribute.
+The database schema is accessible via the :py:attr:`~astrodbkit2.astrodb.Database.metadata` attribute.
 
 For example, to see the available tables users can do::
 
@@ -99,7 +99,7 @@ And users can also examine column information for an existing table::
 Specialized Searches
 --------------------
 
-To search for an object by name, users can use the :py:meth:`~astrodb.Database.search_object`
+To search for an object by name, users can use the :py:meth:`~astrodbkit2.astrodb.Database.search_object`
 method to do fuzzy searches on the provided name, output results from any table,
 and also include alternate Simbad names for their source. Refer to the API documentation for full details.
 
@@ -115,7 +115,7 @@ Search for any source with 1357+1428 in its name and return results from the Pho
 
     db.search_object('1357+1428', output_table='Photometry', format='astropy')
 
-**Astrodbkit2**  also contains an :py:meth:`~astrodb.Database.inventory` method to return all data for a source by its name::
+**Astrodbkit2**  also contains an :py:meth:`~astrodbkit2.astrodb.Database.inventory` method to return all data for a source by its name::
 
     data = db.inventory('2MASS J13571237+1428398')
     print(data)  # output as a dictionary, with individual tables as results
@@ -164,7 +164,7 @@ General Queries
 --------------------
 
 Frequently, users may wish to perform specialized queries against the full database.
-This can be used with the SQLAlchemy ORM and a convenience method, :py:meth:`~astrodb.Database.query`, exists for this.
+This can be used with the SQLAlchemy ORM and a convenience method, :py:attr:`~astrodbkit2.astrodb.Database.query`, exists for this.
 For more details on how to use SQLAlchemy, refer to `their documentation <https://docs.sqlalchemy.org/en/13/orm/>`_.
 Here are a few examples.
 
@@ -197,7 +197,7 @@ Example queries showing how to perform ANDs and ORs::
     # Query with OR
     db.query(db.Sources).filter(or_(db.Sources.c.dec < 0, db.Sources.c.ra > 200)).all()
 
-In addition to using the ORM, it is useful to note that a :py:meth:`~astrodb.Database.sql_query` method exists
+In addition to using the ORM, it is useful to note that a :py:meth:`~astrodbkit2.astrodb.Database.sql_query` method exists
 to pass direct SQL queries to the database for users who may wish to write their own SQL statements::
 
     results = db.sql_query('select * from sources', format='astropy')
