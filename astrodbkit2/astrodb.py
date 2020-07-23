@@ -324,7 +324,7 @@ class Database:
     # Text query methods
     def search_object(self, name, output_table=None, resolve_simbad=False,
                       table_names={'Sources': 'source', 'Names': 'other_name', 'Sources': 'shortname'},
-                      format='default'):
+                      format='default', verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -343,6 +343,8 @@ class Database:
             Default: {'Sources': 'source', 'Names': 'other_name'}
         format : str
             Format to return results in (pandas, astropy/table, default)
+        verbose : bool
+            Output some extra messages (default: True)
 
         Returns
         -------
@@ -363,7 +365,8 @@ class Database:
         if resolve_simbad:
             simbad_names = get_simbad_names(name)
             name = list(set(simbad_names + [name]))
-            print(f'Including Simbad names, searching for: {name}')
+            if verbose:
+                print(f'Including Simbad names, searching for: {name}')
 
         # Turn name into a list
         if not isinstance(name, list):
