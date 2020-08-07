@@ -324,7 +324,7 @@ class Database:
     # Text query methods
     def search_object(self, name, output_table=None, resolve_simbad=False,
                       table_names={'Sources': 'source', 'Names': 'other_name', 'Sources': 'shortname'},
-                      format='default', verbose=True):
+                      format='default', fuzzy_search=True, verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -332,8 +332,8 @@ class Database:
 
         Parameters
         ----------
-        name : str
-            Object name to match
+        name : str or list
+            Object name(s) to match
         output_table : str
             Name of table to match. Default: primary table (eg, Sources)
         resolve_simbad : bool
@@ -343,6 +343,8 @@ class Database:
             Default: {'Sources': 'source', 'Names': 'other_name'}
         format : str
             Format to return results in (pandas, astropy/table, default)
+        fuzzy_search : bool
+            Flag to perform partial searches on provided names (default: True)
         verbose : bool
             Output some extra messages (default: True)
 
@@ -384,8 +386,12 @@ class Database:
         # but is the simpler setup and at our scale is sufficient
         matched_names = []
         for k, v in table_names.items():
-            filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
-                       for n in name]
+            if fuzzy_search:
+                filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
+                           for n in name]
+            else:
+                filters = [self.metadata.tables[k].columns[v].ilike(f'{n}')
+                           for n in name]
 
             # Column to be returned
             if k == self._primary_table:

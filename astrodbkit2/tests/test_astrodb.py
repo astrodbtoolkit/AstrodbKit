@@ -109,6 +109,8 @@ def test_search_object(mock_simbad, db):
     assert len(t) == 0
     t = db.search_object('engu')
     assert len(t) == 1
+    t = db.search_object('engu', fuzzy_search=False)
+    assert len(t) == 0
 
     # Search but only consider the Sources.source column
     t = db.search_object('penguin', table_names={'Sources': 'source'})
