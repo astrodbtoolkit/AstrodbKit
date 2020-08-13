@@ -244,6 +244,7 @@ def test_copy_database_schema():
     assert db2.query(db2.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Close the database and delete the temporary secondary file
+    db2.session.close()
     db2.engine.dispose()
     if os.path.exists('second.db'):
         os.remove('second.db')
