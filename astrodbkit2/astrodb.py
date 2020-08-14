@@ -160,6 +160,12 @@ def copy_database_schema(source_connection_string, destination_connection_string
                 dest_session.execute(dest_table.insert(row))
             dest_session.commit()
 
+    # Explicitly close sessions/engines
+    src_session.close()
+    dest_session.close()
+    src_engine.dispose()
+    dest_engine.dispose()
+
 
 class Database:
     def __init__(self, connection_string,
