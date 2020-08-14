@@ -113,10 +113,10 @@ def test_search_object(mock_simbad, db):
     assert len(t) == 0
 
     # Search but only consider the Sources.source column
-    t = db.search_object('penguin', table_names={'Sources': 'source'})
+    t = db.search_object('penguin', table_names={'Sources': ['source']})
     assert len(t) == 0
     # As before, but now resolve names with Simbad which will allow me to match 'fake'
-    t = db.search_object('penguin', resolve_simbad=True, table_names={'Sources': 'source'})
+    t = db.search_object('penguin', resolve_simbad=True, table_names={'Sources': ['source']})
     assert len(t) == 1
 
     # Search but return Photometry
@@ -127,7 +127,7 @@ def test_search_object(mock_simbad, db):
     with pytest.raises(RuntimeError):
         t = db.search_object('fake', output_table='NOTABLE')
     with pytest.raises(RuntimeError):
-        t = db.search_object('fake', table_names={'NOTABLE': 'nocolumn'})
+        t = db.search_object('fake', table_names={'NOTABLE': ['nocolumn']})
 
 
 def test_sql_query(db):

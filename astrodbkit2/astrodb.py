@@ -226,7 +226,8 @@ class Database:
                 self.metadata.tables[tab].columns[col].type = v
 
     # Generic methods
-    def _handle_format(self, temp, format):
+    @staticmethod
+    def _handle_format(temp, format):
         # Internal method to handle SQLAlchemy output and format it
         if format.lower() in ('astropy', 'table'):
             if len(temp) > 0:
@@ -323,7 +324,7 @@ class Database:
 
     # Text query methods
     def search_object(self, name, output_table=None, resolve_simbad=False,
-                      table_names={'Sources': 'source', 'Names': 'other_name', 'Sources': 'shortname'},
+                      table_names={'Sources': ['source', 'shortname'], 'Names': ['other_name']},
                       format='default', fuzzy_search=True, verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
@@ -339,8 +340,8 @@ class Database:
         resolve_simbad : bool
             Get additional names from Simbad. Default: False
         table_names : dict
-            Dictionary of tables to search for name information. Should be of the form table name: column name.
-            Default: {'Sources': 'source', 'Names': 'other_name'}
+            Dictionary of tables to search for name information. Should be of the form table name: column name list.
+            Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
         format : str
             Format to return results in (pandas, astropy/table, default)
         fuzzy_search : bool
@@ -385,25 +386,26 @@ class Database:
         # This is not really optimized as it does separate DB calls,
         # but is the simpler setup and at our scale is sufficient
         matched_names = []
-        for k, v in table_names.items():
-            if fuzzy_search:
-                filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
-                           for n in name]
-            else:
-                filters = [self.metadata.tables[k].columns[v].ilike(f'{n}')
-                           for n in name]
+        for k, col_list in table_names.items():
+            for v in col_list:
+                if fuzzy_search:
+                    filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
+                               for n in name]
+                else:
+                    filters = [self.metadata.tables[k].columns[v].ilike(f'{n}')
+                               for n in name]
 
-            # Column to be returned
-            if k == self._primary_table:
-                output_to_match = self.metadata.tables[k].columns[self._primary_table_key]
-            else:
-                output_to_match = self.metadata.tables[k].columns[self._foreign_key]
+                # Column to be returned
+                if k == self._primary_table:
+                    output_to_match = self.metadata.tables[k].columns[self._primary_table_key]
+                else:
+                    output_to_match = self.metadata.tables[k].columns[self._foreign_key]
 
-            temp = self.query(output_to_match).\
-                filter(or_(*filters)).\
-                distinct().\
-                all()
-            matched_names += [s[0] for s in temp]
+                temp = self.query(output_to_match).\
+                    filter(or_(*filters)).\
+                    distinct().\
+                    all()
+                matched_names += [s[0] for s in temp]
 
         # Join the matched sources with the desired table
         temp = self.query(self.metadata.tables[output_table]).\
