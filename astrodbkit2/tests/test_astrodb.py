@@ -4,6 +4,7 @@ import os
 import json
 import pytest
 import pandas as pd
+from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
@@ -93,6 +94,21 @@ def test_add_data(db):
                   }]
     db.Photometry.insert().execute(phot_data)
 
+    # Add SpectralType
+    spt_data = [{'source': '2MASS J13571237+1428398',
+                 'spectral_type': 13,
+                 'spectral_type_error': None,
+                 'regime': 'fake',
+                 'best': 1,
+                 'reference': 'Cutr12'
+                 }]
+    # First try with an incorrect regime value
+    with pytest.raises(IntegrityError):
+        db.SpectralTypes.insert().execute(spt_data)
+    # Then with an accpeted regime value
+    spt_data[0]['regime'] = 'infrared'
+    db.SpectralTypes.insert().execute(spt_data)
+
 
 def test_query_data(db):
     # Perform some example queries and confirm the results
@@ -178,7 +194,13 @@ def test_inventory(db):
                                  'epoch': None, 'comments': None, 'reference': 'Cutr12'},
                                 {'band': 'WISE_W2', 'ucd': None, 'magnitude': 12.99,
                                  'magnitude_error': 0.028, 'telescope': 'WISE', 'instrument': None,
-                                 'epoch': None, 'comments': None, 'reference': 'Cutr12'}]
+                                 'epoch': None, 'comments': None, 'reference': 'Cutr12'}],
+                 'SpectralTypes': [{'spectral_type': 13,
+                                    'spectral_type_error': None,
+                                    'regime': 'infrared',
+                                    'best': 1,
+                                    'comments': None,
+                                    'reference': 'Cutr12'}]
                  }
 
     assert db.inventory('2MASS J13571237+1428398') == test_dict

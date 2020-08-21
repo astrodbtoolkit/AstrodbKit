@@ -1,6 +1,7 @@
 # Example schema for part of the SIMPLE database
 
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, BigInteger, Enum, Date, DateTime
+import enum
 from astrodbkit2.astrodb import Base
 
 
@@ -30,6 +31,16 @@ class Instruments(Base):
 
 
 # -------------------------------------------------------------------------------------------------------------------
+# Enumerations tables
+class Regime(enum.Enum):
+    """Enumeration for spectral type regime"""
+    optical = 'optical'
+    infrared = 'infrared'
+    ultraviolet = 'ultraviolet'
+    radio = 'radio'
+
+
+# -------------------------------------------------------------------------------------------------------------------
 # Main tables
 class Sources(Base):
     """ORM for the sources table. This stores the main identifiers for our objects along with ra and dec"""
@@ -50,7 +61,7 @@ class Names(Base):
 
 class Photometry(Base):
     __tablename__ = 'Photometry'
-    source = Column(String(100), ForeignKey('Sources.source', ondelete='cascade'), nullable=False, primary_key=True)
+    source = Column(String(100), ForeignKey('Sources.source', ondelete='cascade', onupdate='cascade'), nullable=False, primary_key=True)
     band = Column(String(30), primary_key=True)
     ucd = Column(String(100))
     magnitude = Column(Float)
@@ -61,3 +72,13 @@ class Photometry(Base):
     comments = Column(String(1000))
     reference = Column(String(30), ForeignKey('Publications.name', ondelete='cascade'), primary_key=True)
 
+
+class SpectralTypes(Base):
+    __tablename__ = 'SpectralTypes'
+    source = Column(String(100), ForeignKey('Sources.source', ondelete='cascade', onupdate='cascade'), nullable=False, primary_key=True)
+    spectral_type = Column(Float)
+    spectral_type_error = Column(Float)
+    regime = Column(Enum(Regime), primary_key=True)  # restricts to a few values: Optical, Infrared
+    best = Column(Boolean)  # flag for indicating if this is the best measurement or not
+    comments = Column(String(1000))
+    reference = Column(String(30), ForeignKey('Publications.name', ondelete='cascade'), primary_key=True)
