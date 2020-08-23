@@ -64,7 +64,7 @@ def _name_formatter(name):
     """
 
     # Clean up multiple spaces
-    name = re.sub("\s\s+", " ", name)
+    name = re.sub(r"\s\s+", " ", name)
 
     # Clean up Simbad types
     strings_to_delete = ['V* ', 'EM* ', 'NAME ', '** ', 'Cl* ', '* ']

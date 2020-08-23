@@ -161,7 +161,8 @@ def test_sql_query(db):
     t = db.sql_query('SELECT * FROM Instruments', fmt='astropy')
     assert len(t) == 0
     assert isinstance(t, Table)
-    _ = db.sql_query('SELECT * FROM Sources', format='pandas')
+    with pytest.warns(DeprecationWarning):
+        _ = db.sql_query('SELECT * FROM Sources', format='pandas')
     with pytest.raises(TypeError):
         _ = db.sql_query('SELECT * FROM Sources', format='pandas', fmt='pandas')
 
