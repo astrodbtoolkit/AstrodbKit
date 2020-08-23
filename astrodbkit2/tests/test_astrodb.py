@@ -149,18 +149,21 @@ def test_search_object(mock_simbad, db):
 def test_sql_query(db):
     # Perform direct SQLite queries
     # Includes testing of _handle_format implicitly
-    t = db.sql_query('SELECT * FROM Sources', format='default')
+    t = db.sql_query('SELECT * FROM Sources', fmt='default')
     assert len(t) == 2
     assert isinstance(t, list)
-    t = db.sql_query('SELECT * FROM Sources', format='astropy')
+    t = db.sql_query('SELECT * FROM Sources', fmt='astropy')
     assert isinstance(t, Table)
-    t = db.sql_query('SELECT * FROM Sources', format='table')
+    t = db.sql_query('SELECT * FROM Sources', fmt='table')
     assert isinstance(t, Table)
-    t = db.sql_query('SELECT * FROM Sources', format='pandas')
+    t = db.sql_query('SELECT * FROM Sources', fmt='pandas')
     assert isinstance(t, pd.DataFrame)
-    t = db.sql_query('SELECT * FROM Instruments', format='astropy')
+    t = db.sql_query('SELECT * FROM Instruments', fmt='astropy')
     assert len(t) == 0
     assert isinstance(t, Table)
+    _ = db.sql_query('SELECT * FROM Sources', format='pandas')
+    with pytest.raises(TypeError):
+        _ = db.sql_query('SELECT * FROM Sources', format='pandas', fmt='pandas')
 
 
 def test_query_formats(db):
@@ -179,6 +182,25 @@ def test_query_formats(db):
     t = db.query(db.Instruments).pandas()
     assert len(t) == 0
     assert isinstance(t, pd.DataFrame)
+
+
+def test_query_spectra(db):
+    # Test special conversions in query methods
+
+    t = db.query(db.Sources).pandas(spectra=['fake', 'second fake'])
+    assert t['ra'][0] == 209.301675
+    t = db.query(db.Sources).pandas(spectra=['ra'])
+    assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Sources).pandas(spectra='ra')
+    assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Sources).astropy(spectra='ra')
+    assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Sources).spectra(spectra='ra', fmt='pandas')
+    assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Sources).spectra(spectra='ra')
+    assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Instruments).table(spectra='name')
+    assert len(t) == 0
 
 
 def test_inventory(db):

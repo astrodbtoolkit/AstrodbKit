@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
-from .utils import json_serializer, get_simbad_names
+from .utils import json_serializer, get_simbad_names, deprecated_alias
 
 try:
     from .version import version as __version__
@@ -27,8 +27,7 @@ Base = declarative_base()
 class AstrodbQuery(Query):
     # Subclassing the Query class to add more functionality.
     # See: https://stackoverflow.com/questions/15936111/sqlalchemy-can-you-add-custom-methods-to-the-query-object
-    def astropy(self):
-        # Allow SQLAlchemy query output to be formatted as an astropy Table
+    def _make_astropy(self):
         temp = self.all()
         if len(temp) > 0:
             t = AstropyTable(rows=temp, names=temp[0].keys())
@@ -36,12 +35,81 @@ class AstrodbQuery(Query):
             t = AstropyTable(temp)
         return t
 
-    def table(self):
-        # Alternative for getting astropy Table
-        return self.astropy()
+    def astropy(self, spectra=None):
+        """
+        Allow SQLAlchemy query output to be formatted as an astropy Table
 
-    def pandas(self):
-        return pd.DataFrame(self.all())
+        Parameters
+        ----------
+        spectra : str or list
+            List of columns to process as spectra
+
+        Returns
+        -------
+        t : astropy.Table
+            Table output of query
+        """
+
+        t = self._make_astropy()
+
+        # Apply spectra conversion
+        if spectra is not None:
+            if not isinstance(spectra, (list, tuple)):
+                spectra = [spectra]
+            for col in spectra:
+                if col in t.colnames:
+                    # TODO: Replace with real function
+                    t[col] = [f'SPECTRA {x}' for x in t[col]]
+
+        return t
+
+    def table(self, *args, **kwargs):
+        # Alternative for getting astropy Table
+        return self.astropy(*args, **kwargs)
+
+    def pandas(self, spectra=None):
+        """
+        Allow SQLAlchemy query output to be formatted as a pandas DataFrame
+
+        Parameters
+        ----------
+        spectra : str or list
+            List of columns to process as spectra
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            DataFrame output of query
+        """
+
+        df = pd.DataFrame(self.all())
+
+        # Apply spectra conversion
+        if spectra is not None:
+            if not isinstance(spectra, (list, tuple)):
+                spectra = [spectra]
+            for col in spectra:
+                if col in df.columns.to_list():
+                    # TODO: Replace with real function
+                    df[col] = df[col].apply(lambda x: f'SPECTRA {x}')
+
+        return df
+
+    def spectra(self, spectra='spectra', fmt='astropy'):
+        """
+        Convenience method fo that uses default column name for spectra conversion
+
+        Parameters
+        ----------
+        spectra : str or list
+            List of columns to process as spectra
+        fmt : str
+            Output format (Default: astropy)
+        """
+        if fmt == 'pandas':
+            return self.pandas(spectra=spectra)
+        else:
+            return self.astropy(spectra=spectra)
 
 
 def load_connection(connection_string, sqlite_foreign=True, base=None):
@@ -233,14 +301,14 @@ class Database:
 
     # Generic methods
     @staticmethod
-    def _handle_format(temp, format):
+    def _handle_format(temp, fmt):
         # Internal method to handle SQLAlchemy output and format it
-        if format.lower() in ('astropy', 'table'):
+        if fmt.lower() in ('astropy', 'table'):
             if len(temp) > 0:
                 results = AstropyTable(rows=temp, names=temp[0].keys())
             else:
                 results = AstropyTable(temp)
-        elif format.lower() == 'pandas':
+        elif fmt.lower() == 'pandas':
             results = pd.DataFrame(temp)
         else:
             results = temp
@@ -329,9 +397,10 @@ class Database:
         return data_dict
 
     # Text query methods
+    @deprecated_alias(format='fmt')
     def search_object(self, name, output_table=None, resolve_simbad=False,
                       table_names={'Sources': ['source', 'shortname'], 'Names': ['other_name']},
-                      format='default', fuzzy_search=True, verbose=True):
+                      fmt='default', fuzzy_search=True, verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -348,7 +417,7 @@ class Database:
         table_names : dict
             Dictionary of tables to search for name information. Should be of the form table name: column name list.
             Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
-        format : str
+        fmt : str
             Format to return results in (pandas, astropy/table, default)
         fuzzy_search : bool
             Flag to perform partial searches on provided names (default: True)
@@ -418,12 +487,13 @@ class Database:
             filter(self.metadata.tables[output_table].columns[match_column].in_(matched_names)).\
             all()
 
-        results = self._handle_format(temp, format)
+        results = self._handle_format(temp, fmt)
 
         return results
 
     # General query methods
-    def sql_query(self, query, format='default'):
+    @deprecated_alias(format='fmt')
+    def sql_query(self, query, fmt='default'):
         """
         Wrapper for a direct SQL query.
 
@@ -431,7 +501,7 @@ class Database:
         ----------
         query : str
             Query to be performed
-        format : str
+        fmt : str
             Format in which to return the results (pandas, astropy/table, default)
 
         Returns
@@ -441,7 +511,7 @@ class Database:
 
         temp = self.engine.execute(query).fetchall()
 
-        return self._handle_format(temp, format)
+        return self._handle_format(temp, fmt)
 
     # Object output methods
     def save_json(self, name, directory):
