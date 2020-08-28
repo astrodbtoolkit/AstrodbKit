@@ -284,7 +284,7 @@ class Database:
         self._foreign_key = foreign_key
 
         if len(self.metadata.tables) == 0:
-            print('Database empty. Import schema (eg, from astrodbkit.schema import *) '
+            print('Database empty. Import schema (eg, from astrodbkit.schema_example import *) '
                   'and then run create_database()')
             raise RuntimeError('Create database first.')
 
