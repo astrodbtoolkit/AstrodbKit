@@ -105,7 +105,7 @@ and also include alternate Simbad names for their source. Refer to the API docum
 
 Search for TWA 27 and return default results in Astropy Table format::
 
-    db.search_object('twa 27', format='astropy')
+    db.search_object('twa 27', fmt='astropy')
 
 Search for TWA 27 and any of its alternate designations from Simbad and return results from the Names table::
 
@@ -113,7 +113,7 @@ Search for TWA 27 and any of its alternate designations from Simbad and return r
 
 Search for any source with 1357+1428 in its name and return results from the Photometry table in pandas Dataframe format::
 
-    db.search_object('1357+1428', output_table='Photometry', format='astropy')
+    db.search_object('1357+1428', output_table='Photometry', fmt='astropy')
 
 **Astrodbkit2**  also contains an :py:meth:`~astrodbkit2.astrodb.Database.inventory` method to return all data for a source by its name::
 
@@ -200,7 +200,7 @@ Example queries showing how to perform ANDs and ORs::
 In addition to using the ORM, it is useful to note that a :py:meth:`~astrodbkit2.astrodb.Database.sql_query` method exists
 to pass direct SQL queries to the database for users who may wish to write their own SQL statements::
 
-    results = db.sql_query('select * from sources', format='astropy')
+    results = db.sql_query('select * from sources', fmt='astropy')
     print(results)
 
 Modifying Data
@@ -252,7 +252,7 @@ We recommend the later to output the entire contents to disk::
     db.save_json('2MASS J13571237+1428398', 'data')
 
     # Save entire database to directory 'data'
-    db.save_db('data')
+    db.save_database('data')
 
 .. note:: To properly capture database deletes, the contents of the specified directory is first cleared before
           creating JSON files representing the current state of the database.

@@ -271,8 +271,7 @@ class Database:
 
         # Convenience methods
         self.query = self.session.query
-
-        self.save_database = self.save_db
+        self.save_db = self.save_database
         self.load_db = self.load_database
 
         # Prep the tables
@@ -539,7 +538,7 @@ class Database:
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_db(self, directory, clear_first=True):
+    def save_database(self, directory, clear_first=True):
         """
         Output contents of the database into the specified directory as JSON files.
         Source objects have individual JSON files with all data for that object.

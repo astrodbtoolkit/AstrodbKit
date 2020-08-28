@@ -229,7 +229,7 @@ def test_inventory(db):
     assert db.inventory('2MASS J13571237+1428398') == test_dict
 
 
-def test_save_db(db, db_dir):
+def test_save_database(db, db_dir):
     # Test saving the database to JSON files
 
     # Clear temporary directory first
@@ -238,7 +238,7 @@ def test_save_db(db, db_dir):
     for file in os.listdir(db_dir):
         os.remove(os.path.join(db_dir, file))
 
-    db.save_db(db_dir)
+    db.save_database(db_dir)
 
     # Check JSON data
     assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
