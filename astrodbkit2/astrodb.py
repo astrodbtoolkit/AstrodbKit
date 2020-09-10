@@ -95,7 +95,7 @@ class AstrodbQuery(Query):
 
         return df
 
-    def spectra(self, spectra='spectra', fmt='astropy'):
+    def spectra(self, spectra=['spectrum'], fmt='astropy'):
         """
         Convenience method fo that uses default column name for spectra conversion
 
@@ -237,7 +237,7 @@ def copy_database_schema(source_connection_string, destination_connection_string
 
 class Database:
     def __init__(self, connection_string,
-                 reference_tables=['Publications', 'Telescopes', 'Instruments'],
+                 reference_tables=['Publications', 'Telescopes', 'Instruments', 'Modes'],
                  primary_table='Sources',
                  primary_table_key='source',
                  foreign_key='source',
@@ -559,6 +559,10 @@ class Database:
 
         # Output reference tables
         for table in self._reference_tables:
+            # Skip reference tables that are not actually in the database
+            if table not in self.metadata.tables.keys():
+                continue
+
             results = self.session.query(self.metadata.tables[table]).all()
             data = [row._asdict() for row in results]
             filename = table + '.json'
