@@ -49,6 +49,22 @@ def json_serializer(obj):
     return obj.__dict__
 
 
+def datetime_json_parser(json_dict):
+    """Function to convert JSON dictionary objects to datetime when possible.
+    This is required to get datetime objects into the database.
+    Adapted from: https://stackoverflow.com/questions/8793448/how-to-convert-to-a-python-datetime-object-with-json-loads
+    """
+    for (key, value) in json_dict.items():
+        if isinstance(value, str):
+            try:
+                json_dict[key] = datetime.fromisoformat(value)
+            except (ValueError, AttributeError):
+                pass
+        else:
+            pass
+    return json_dict
+
+
 def _name_formatter(name):
     """
     Clean up names of spurious formatting (extra spaces, some special characters)

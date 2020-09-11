@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
-from .utils import json_serializer, get_simbad_names, deprecated_alias
+from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
 
 try:
     from .version import version as __version__
@@ -606,7 +606,7 @@ class Database:
         """
 
         with open(filename, 'r') as f:
-            data = json.load(f)
+            data = json.load(f, object_hook=datetime_json_parser)
 
         # Loop through the dictionary, adding data to the database.
         # Ensure that Sources is added first

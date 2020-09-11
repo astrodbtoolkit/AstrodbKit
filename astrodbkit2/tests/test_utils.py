@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from io import StringIO
 from astropy.table import Table
-from astrodbkit2.utils import json_serializer, get_simbad_names, _name_formatter
+from astrodbkit2.utils import json_serializer, get_simbad_names, _name_formatter, datetime_json_parser
 try:
     import mock
 except ImportError:
@@ -35,6 +35,15 @@ def test_json_serializer():
     assert new_data['date'] == '2018-12-06T12:30:00'
     assert new_data['value'] == pytest.approx(2.3)
     assert new_data['integer'] == 4
+
+
+def test_datetime_json_parser():
+    json_dict = {'date': '2018-12-06T12:30:00', 'name': 'TWA 23', 'number': 4.5}
+    new_dict = datetime_json_parser(json_dict)
+    assert new_dict['date'] == datetime.fromisoformat('2018-12-06T12:30:00')
+    assert isinstance(new_dict['date'], datetime)
+    assert isinstance(new_dict['name'], str)
+    assert isinstance(new_dict['number'], float)
 
 
 @mock.patch('astrodbkit2.utils.Simbad.query_objectids')
