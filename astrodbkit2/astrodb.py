@@ -90,8 +90,7 @@ class AstrodbQuery(Query):
                 spectra = [spectra]
             for col in spectra:
                 if col in df.columns.to_list():
-                    # TODO: Replace with real function
-                    df[col] = df[col].apply(lambda x: f'SPECTRA {x}')
+                    df[col] = df[col].apply(lambda x: load_spectrum(x))
 
         return df
 

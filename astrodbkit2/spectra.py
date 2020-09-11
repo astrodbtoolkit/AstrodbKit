@@ -9,13 +9,13 @@ from astropy.units import Unit
 
 
 def identify_spex_prism(origin, *args, **kwargs):
-    # TODO: Needs to be more specific, too many others match so format has to be explicitly provided
+    # Identify if provided file is a Spex Prism spectrum
     return (isinstance(args[0], str) and
-            'spex' in args[0].lower and
+            ('spex' in args[0].lower()) and
             os.path.splitext(args[0].lower())[1] == '.fits')
 
 
-@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'])
+@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'], dtype=Spectrum1D)
 def load_spex(filename, **kwargs):
     # Open a SpeX Prism file and convert it to a Spectrum1D object
 
@@ -37,8 +37,7 @@ def load_spex(filename, **kwargs):
 
 
 def load_spectrum(filename):
-    if 'spex' in filename.lower():
-        spec1d = Spectrum1D.read(filename, format='Spex Prism')
-    else:
-        spec1d = Spectrum1D.read(filename)
+    # Handler for spectra
+    # TODO: Add call to function to convert environment variable to local path (for using local_spectrum)
+    spec1d = Spectrum1D.read(filename)
     return spec1d
