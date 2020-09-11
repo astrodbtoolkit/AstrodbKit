@@ -185,7 +185,8 @@ def test_query_formats(db):
     assert isinstance(t, pd.DataFrame)
 
 
-def test_query_spectra(db):
+@mock.patch('astrodbkit2.astrodb.load_spectrum', side_effect=lambda x: f'SPECTRA {x}')
+def test_query_spectra(mock_spectrum, db):
     # Test special conversions in query methods
 
     t = db.query(db.Sources).pandas(spectra=['fake', 'second fake'])

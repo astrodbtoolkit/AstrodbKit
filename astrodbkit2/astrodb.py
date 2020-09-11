@@ -13,6 +13,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
 from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
+from .spectra import load_spectrum
 
 try:
     from .version import version as __version__
@@ -58,8 +59,7 @@ class AstrodbQuery(Query):
                 spectra = [spectra]
             for col in spectra:
                 if col in t.colnames:
-                    # TODO: Replace with real function
-                    t[col] = [f'SPECTRA {x}' for x in t[col]]
+                    t[col] = [load_spectrum(x) for x in t[col]]
 
         return t
 
