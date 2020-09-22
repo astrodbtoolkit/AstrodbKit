@@ -8,11 +8,32 @@ from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
 
 
+def _identify_spex_fits(filename):
+    """
+    Check whether the given file is a SpeX data product.
+    """
+    try:
+        with fits.open(filename, memmap=False) as hdulist:
+            return 'spex' in hdulist[0].header['INSTRUME'].lower() and \
+                   'irtf' in hdulist[0].header['TELESCOP'].lower()
+    except Exception:
+        return False
+
+
 def identify_spex_prism(origin, *args, **kwargs):
-    # TODO: Needs to be more specific, too many others match so format has to be explicitly provided
-    return (isinstance(args[0], str) and
-            'spex' in args[0].lower and
-            os.path.splitext(args[0].lower())[1] == '.fits')
+    """
+    Confirm this is a SpeX Prism FITS file.
+    See FITS keyword reference at http://irtfweb.ifa.hawaii.edu/~spex/observer/
+    Notes: GRAT has values of: ShortXD, Prism, LXD_long, LXD_short, SO_long, SO_short
+    """
+    is_spex = _identify_spex_fits(args[0])
+    with fits.open(args[0], memmap=False) as hdulist:
+        return (isinstance(args[0], str) and
+                os.path.splitext(args[0].lower())[1] == '.fits' and
+                is_spex
+                and ('lowres' in hdulist[0].header['GRAT'].lower() or
+                     'prism' in hdulist[0].header['GRAT'].lower())
+                )
 
 
 @data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'])
@@ -36,9 +57,16 @@ def load_spex(filename, **kwargs):
     return Spectrum1D(flux=data, spectral_axis=wave, uncertainty=uncertainty, meta=meta)
 
 
-def load_spectrum(filename):
-    if 'spex' in filename.lower():
-        spec1d = Spectrum1D.read(filename, format='Spex Prism')
-    else:
-        spec1d = Spectrum1D.read(filename)
+def load_spectrum(filename, spectra_format=None):
+    # Attempt to load the filename as a spectrum object
+
+    try:
+        if spectra_format is not None:
+            spec1d = Spectrum1D.read(filename, format=spectra_format)
+        else:
+            spec1d = Spectrum1D.read(filename)
+    except Exception as e:
+        print(f'Error loading {filename}: {e}')
+        spec1d = filename
+
     return spec1d
