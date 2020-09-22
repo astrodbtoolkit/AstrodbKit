@@ -8,7 +8,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
 
 
-def _identify_spex_fits(filename):
+def _identify_spex(filename):
     """
     Check whether the given file is a SpeX data product.
     """
@@ -26,18 +26,21 @@ def identify_spex_prism(origin, *args, **kwargs):
     See FITS keyword reference at http://irtfweb.ifa.hawaii.edu/~spex/observer/
     Notes: GRAT has values of: ShortXD, Prism, LXD_long, LXD_short, SO_long, SO_short
     """
-    is_spex = _identify_spex_fits(args[0])
-    with fits.open(args[0], memmap=False) as hdulist:
-        return (isinstance(args[0], str) and
-                os.path.splitext(args[0].lower())[1] == '.fits' and
-                is_spex
-                and ('lowres' in hdulist[0].header['GRAT'].lower() or
-                     'prism' in hdulist[0].header['GRAT'].lower())
-                )
+    is_spex = _identify_spex(args[0])
+    if is_spex:
+        with fits.open(args[0], memmap=False) as hdulist:
+            return (isinstance(args[0], str) and
+                    os.path.splitext(args[0].lower())[1] == '.fits' and
+                    is_spex
+                    and ('lowres' in hdulist[0].header['GRAT'].lower() or
+                         'prism' in hdulist[0].header['GRAT'].lower())
+                    )
+    else:
+        return is_spex
 
 
 @data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'], dtype=Spectrum1D)
-def load_spex(filename, **kwargs):
+def load_spex_prism(filename, **kwargs):
     # Open a SpeX Prism file and convert it to a Spectrum1D object
 
     with fits.open(filename, **kwargs) as hdulist:
