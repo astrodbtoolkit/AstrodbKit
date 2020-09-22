@@ -36,7 +36,7 @@ def identify_spex_prism(origin, *args, **kwargs):
                 )
 
 
-@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'])
+@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'], dtype=Spectrum1D)
 def load_spex(filename, **kwargs):
     # Open a SpeX Prism file and convert it to a Spectrum1D object
 
