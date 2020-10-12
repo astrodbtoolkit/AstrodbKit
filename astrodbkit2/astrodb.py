@@ -111,7 +111,7 @@ class AstrodbQuery(Query):
             return self.astropy(spectra=spectra)
 
 
-def load_connection(connection_string, sqlite_foreign=True, base=None):
+def load_connection(connection_string, sqlite_foreign=True, base=None, connection_arguments={}):
     """Return session, base, and engine objects for connecting to the database.
 
     Parameters
@@ -124,6 +124,8 @@ def load_connection(connection_string, sqlite_foreign=True, base=None):
         Flag to enable foreign key checks for SQLite. Default: True
     base : SQLAlchemy base object
         Use an existing base class. Default: None (ie, creates a new one)
+    connection_arguments : dict
+        Additional connection arguments, like {'check_same_thread': False}
 
     Returns
     -------
@@ -136,7 +138,7 @@ def load_connection(connection_string, sqlite_foreign=True, base=None):
         Provides a source of database connectivity and behavior.
     """
 
-    engine = create_engine(connection_string)
+    engine = create_engine(connection_string, connect_args=connection_arguments)
     if not base:
        base = declarative_base()
     base.metadata.bind = engine
@@ -241,7 +243,8 @@ class Database:
                  primary_table_key='source',
                  foreign_key='source',
                  column_type_overrides={},
-                 sqlite_foreign=True):
+                 sqlite_foreign=True,
+                 connection_arguments={}):
         """
         Wrapper for database calls and utility functions
 
@@ -264,9 +267,12 @@ class Database:
             will set the table spectra, column spectrum to be of type TEXT()
         sqlite_foreign : bool
             Flag to enable/disable use of foreign keys with SQLite. Default: True
+        connection_arguments : dict
+            Additional connection arguments, like {'check_same_thread': False}. Default: {}
         """
 
-        self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign)
+        self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign,
+                                                               connection_arguments=connection_arguments)
 
         # Convenience methods
         self.query = self.session.query
