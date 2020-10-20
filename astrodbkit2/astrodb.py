@@ -36,7 +36,7 @@ class AstrodbQuery(Query):
             t = AstropyTable(temp)
         return t
 
-    def astropy(self, spectra=None):
+    def astropy(self, spectra=None, spectra_format=None, **kwargs):
         """
         Allow SQLAlchemy query output to be formatted as an astropy Table
 
@@ -59,7 +59,7 @@ class AstrodbQuery(Query):
                 spectra = [spectra]
             for col in spectra:
                 if col in t.colnames:
-                    t[col] = [load_spectrum(x) for x in t[col]]
+                    t[col] = [load_spectrum(x, spectra_format=spectra_format) for x in t[col]]
 
         return t
 
@@ -67,7 +67,7 @@ class AstrodbQuery(Query):
         # Alternative for getting astropy Table
         return self.astropy(*args, **kwargs)
 
-    def pandas(self, spectra=None):
+    def pandas(self, spectra=None, spectra_format=None, **kwargs):
         """
         Allow SQLAlchemy query output to be formatted as a pandas DataFrame
 
@@ -90,11 +90,11 @@ class AstrodbQuery(Query):
                 spectra = [spectra]
             for col in spectra:
                 if col in df.columns.to_list():
-                    df[col] = df[col].apply(lambda x: load_spectrum(x))
+                    df[col] = df[col].apply(lambda x: load_spectrum(x, spectra_format=spectra_format))
 
         return df
 
-    def spectra(self, spectra=['spectrum'], fmt='astropy'):
+    def spectra(self, spectra=['spectrum'], fmt='astropy', **kwargs):
         """
         Convenience method fo that uses default column name for spectra conversion
 
@@ -106,9 +106,9 @@ class AstrodbQuery(Query):
             Output format (Default: astropy)
         """
         if fmt == 'pandas':
-            return self.pandas(spectra=spectra)
+            return self.pandas(spectra=spectra, **kwargs)
         else:
-            return self.astropy(spectra=spectra)
+            return self.astropy(spectra=spectra, **kwargs)
 
 
 def load_connection(connection_string, sqlite_foreign=True, base=None, connection_arguments={}):

@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 from astropy.io import fits
-from astrodbkit2.spectra import identify_spex_prism, _identify_spex
+from astrodbkit2.spectra import identify_spex_prism, _identify_spex, load_spectrum
 try:
     import mock
 except ImportError:
@@ -58,6 +58,9 @@ def test_load_spex_prism():
     pass
 
 
-def test_load_spectrum():
-    pass
-
+@mock.patch('astrodbkit2.spectra.Spectrum1D.read')
+def test_load_spectrum(mock_spectrum1d):
+    _ = load_spectrum('fake_file.txt')
+    mock_spectrum1d.assert_called_with('fake_file.txt')
+    _ = load_spectrum('fake_file.txt', spectra_format='SpeX')
+    mock_spectrum1d.assert_called_with('fake_file.txt', format='SpeX')

@@ -185,9 +185,15 @@ def test_query_formats(db):
     assert isinstance(t, pd.DataFrame)
 
 
-@mock.patch('astrodbkit2.astrodb.load_spectrum', side_effect=lambda x: f'SPECTRA {x}')
+@mock.patch('astrodbkit2.astrodb.load_spectrum')
 def test_query_spectra(mock_spectrum, db):
     # Test special conversions in query methods
+    def fake_loader(x, spectra_format=None):
+        if spectra_format is None:
+            return f'SPECTRA {x}'
+        else:
+            return f'SPECTRA {x} with format {spectra_format}'
+    mock_spectrum.side_effect = fake_loader
 
     t = db.query(db.Sources).pandas(spectra=['fake', 'second fake'])
     assert t['ra'][0] == 209.301675
@@ -201,6 +207,10 @@ def test_query_spectra(mock_spectrum, db):
     assert t['ra'][0] == 'SPECTRA 209.301675'
     t = db.query(db.Sources).spectra(spectra='ra')
     assert t['ra'][0] == 'SPECTRA 209.301675'
+    t = db.query(db.Sources).spectra(spectra='ra', spectra_format='SpeX')
+    assert t['ra'][0] == 'SPECTRA 209.301675 with format SpeX'
+    t = db.query(db.Sources).spectra(spectra='ra', spectra_format='SpeX', fmt='pandas')
+    assert t['ra'][0] == 'SPECTRA 209.301675 with format SpeX'
     t = db.query(db.Instruments).table(spectra='name')
     assert len(t) == 0
 
