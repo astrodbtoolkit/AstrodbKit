@@ -47,9 +47,18 @@ def load_spex_prism(filename, **kwargs):
         header = hdulist[0].header
 
         tab = hdulist[0].data
-        flux_unit = header['YUNITS'].replace('ergs', 'erg')
-        wave_unit = header['XUNITS'].replace('Microns', 'um')
+
+        # Handle missing/incorrect units
+        try:
+            flux_unit = header['YUNITS'].replace('ergs', 'erg')
+            wave_unit = header['XUNITS'].replace('Microns', 'um')
+        except (KeyError, ValueError):
+            # For now, assume some default units
+            flux_unit = 'erg'
+            wave_unit = 'um'
+
         wave, data = tab[0] * Unit(wave_unit), tab[1] * Unit(flux_unit)
+
         if tab.shape[0] == 3:
             uncertainty = StdDevUncertainty(tab[2])
         else:
