@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
+from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
 from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
 from .spectra import load_spectrum
 
@@ -44,6 +45,8 @@ class AstrodbQuery(Query):
         ----------
         spectra : str or list
             List of columns to process as spectra
+        spectra_format : str
+            Format to apply for all spectra. Default: None means specutils will attempt to find the best one.
 
         Returns
         -------
@@ -75,6 +78,8 @@ class AstrodbQuery(Query):
         ----------
         spectra : str or list
             List of columns to process as spectra
+        spectra_format : str
+            Format to apply for all spectra. Default: None means specutils will attempt to find the best one.
 
         Returns
         -------
@@ -238,10 +243,10 @@ def copy_database_schema(source_connection_string, destination_connection_string
 
 class Database:
     def __init__(self, connection_string,
-                 reference_tables=['Publications', 'Telescopes', 'Instruments', 'Modes'],
-                 primary_table='Sources',
-                 primary_table_key='source',
-                 foreign_key='source',
+                 reference_tables=REFERENCE_TABLES,
+                 primary_table=PRIMARY_TABLE,
+                 primary_table_key=PRIMARY_TABLE_KEY,
+                 foreign_key=FOREIGN_KEY,
                  column_type_overrides={},
                  sqlite_foreign=True,
                  connection_arguments={}):

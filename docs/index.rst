@@ -2,14 +2,39 @@
 AstrodbKit2 Documentation
 *************************
 
-AstrodbKit2 is an astronomical database handler code built on top of SQLAlchemy.
+**AstrodbKit2** is an astronomical database handler code built on top of SQLAlchemy.
 The goal behind this code is to provide SQLAlchemy's
 powerful `Object Relational Mapping (ORM) <https://docs.sqlalchemy.org/en/13/orm/>`_
 infrastructure to access astronomical database contents regardless of the underlying architecture.
 
-This was designed to work with the `SIMPLE database <https://github.com/kelle/SIMPLE>`_, though
-similar databases will work.
 **Astrodbkit2** is inspired from the original **astrodbkit**, which is hardcoded for the SQLite BDNYC database.
+
+Introduction
+============
+
+Astronomical databases tend to focus on targets or observations with ancillary data that support them.
+**Astrodbkit2** is designed to work with these types of databases and adopts several principles
+for some of its more advanced features. These are:
+ - There exists a primary table with object identifiers
+ - There exists any number of supplementary tables that either refer back to the primary table or exist independently
+
+For example, the `SIMPLE database <https://github.com/SIMPLE-AstroDB/SIMPLE-db>`_
+(which was the initial design for **Astrodbkit2**) contains:
+ - the primary Sources table, with coordinate information for each target
+ - several object data tables, like Photometry, Spectra, etc, that contain information for each target
+ - reference tables, like Publications, Telescopes, etc, that list other information that is used
+   throughout the database, but doesn't refer to a particular target
+
+The goal of **Astrodbkit2** is to link together the object tables together in order
+to express them as a single entity, while still retaining the information for other reference tables.
+**Astrodbkit2** can read and write out an entire target's data as a single JSON file for ease of transport and version
+control. Reference tables are also written as JSON files, but organized differently-
+a single file per table with multiple records.
+An **Astrodbkit2**-supported database can thus be exported to two types of JSON files:
+individual target files and reference table files
+If your database is constructed in a similar fashion, it will work well with **Astrodbkit2**.
+Other databases can still benefit from some of the functionality of **Astrodbkit2**,
+but they might not work properly if attempting to use the save/load methods.
 
 Getting Started
 ===============
@@ -27,7 +52,7 @@ Creating a Database
 
 To create a database from scratch users will need a database schema coded with the SQLAlchemy ORM.
 An example schema is provided (see schema_example.py),
-but users can also refer to the `SIMPLE schema <https://github.com/kelle/SIMPLE/blob/main/simple/schema.py>`_.
+but users can also refer to the `SIMPLE schema <https://github.com/SIMPLE-AstroDB/SIMPLE-db/blob/main/simple/schema.py>`_.
 With that on hand, users should import their schema and prepare the database::
 
     from astrodbkit2.astrodb import create_database
@@ -48,6 +73,10 @@ then initialize the database with the :py:class:`astrodbkit2.astrodb.Database()`
     db = Database(connection_string)
 
 The database is now read to be used. If the database is empty, see below how to populate it.
+
+.. note:: The :py:class:`astrodbkit2.astrodb.Database()` class has many parameters that can be set to
+          control the names of primary/reference tables. By default, these match the SIMPLE database, but users can
+          configure them for their own needs and can pass them here or modify their __init__.py file.
 
 Loading the Database
 --------------------
@@ -71,7 +100,7 @@ Querying the Database
 =====================
 
 Upon connecting to a database, **Astrodbkit2** creates methods for each table defined in the schema.
-This allows for a more python approach to writing queries. There are also methods to perform specialized queries.
+This allows for a more pythonic approach to writing queries. There are also methods to perform specialized queries.
 
 Exploring the Schema
 --------------------
@@ -202,6 +231,25 @@ to pass direct SQL queries to the database for users who may wish to write their
 
     results = db.sql_query('select * from sources', fmt='astropy')
     print(results)
+
+General Queries with Transformations
+------------------------------------
+
+As part of version 0.2, **Astrodbkit2** can convert columns to special types.
+Currently, spectra transformations are implemented and the specified column would be converted to a `Spectrum1D` object
+using the `specutils package <https://specutils.readthedocs.io/en/stable/>`_.
+To call this, users can supply the name of the column to convert (by default, this is *spectrum*)::
+
+    db.query(db.Spectra).astropy(spectra='spectrum')
+    db.query(db.Spectra).pandas(spectra=['spectrum'])
+    db.query(db.Spectra).spectra(fmt='astropy')
+
+These three calls will return results from the Spectra table and will attempt to convert the *spectrum*
+column to a Spectrum1D object for each row. Multiple columns to convert can also be passed as a list.
+The parameter `spectra_format` can be specified if **specutils** is having trouble determining the type of spectrum.
+
+Spectra need to be specified as either URL or paths relative to an environment variable
+(`$ASTRODB_SPECTRA`, by default; configurable in __init__.py).
 
 Modifying Data
 ==============

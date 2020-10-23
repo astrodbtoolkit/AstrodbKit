@@ -19,3 +19,16 @@ try:
 except ImportError:
     __version__ = ''
 
+# Global variables
+
+# These describe the various database tables and their links
+REFERENCE_TABLES = ['Publications', 'Telescopes', 'Instruments', 'Modes']
+# REFERENCE_TABLES is a list of tables that do not link to the primary table.
+# These are treated separately from the other data tables that are all assumed to be linked to the primary table.
+PRIMARY_TABLE = 'Sources'  # the primary table used for storing objects
+PRIMARY_TABLE_KEY = 'source'  # the name of the primary key in the primary table; this is used for joining tables
+FOREIGN_KEY = 'source'  # the name of the foreign key in other tables that refer back to the primary
+
+# Environment variable name for database conversions (eg, spectra directory)
+DB_SPECTRA_ENVNAME = 'ASTRODB_SPECTRA'
+DB_IMAGE_ENVNAME = 'ASTRODB_IMAGE'
