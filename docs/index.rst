@@ -248,8 +248,10 @@ These three calls will return results from the Spectra table and will attempt to
 column to a Spectrum1D object for each row. Multiple columns to convert can also be passed as a list.
 The parameter `spectra_format` can be specified if **specutils** is having trouble determining the type of spectrum.
 
-Spectra need to be specified as either URL or paths relative to an environment variable
-(`$ASTRODB_SPECTRA`, by default; configurable in __init__.py).
+Spectra need to be specified as either URL or paths relative to an environment variable,
+for example `$ASTRODB_SPECTRA/infrared/myfile.fits`.
+**AstrodbKit2** would examine the environment variable `$ASTRODB_SPECTRA` and use that as
+part of the absolute path to the file.
 
 Modifying Data
 ==============

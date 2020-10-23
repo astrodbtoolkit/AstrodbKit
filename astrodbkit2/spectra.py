@@ -72,6 +72,17 @@ def load_spex_prism(filename, **kwargs):
 def load_spectrum(filename, spectra_format=None):
     # Attempt to load the filename as a spectrum object
 
+    # Convert filename if using environment variables
+    if filename.startswith('$'):
+        partial_path, _ = os.path.split(filename)
+        while partial_path != '':
+            partial_path, envvar_name = os.path.split(partial_path)
+        abs_path = os.getenv(envvar_name[1:])
+        if abs_path is not None:
+            filename = filename.replace(envvar_name, abs_path)
+        else:
+            print(f'Could not find environment variable {envvar_name}')
+
     try:
         if spectra_format is not None:
             spec1d = Spectrum1D.read(filename, format=spectra_format)

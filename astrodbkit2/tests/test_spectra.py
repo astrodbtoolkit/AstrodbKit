@@ -67,8 +67,13 @@ def test_load_spex_prism(mock_fits_open, good_spex_file, bad_spex_file):
 
 
 @mock.patch('astrodbkit2.spectra.Spectrum1D.read')
-def test_load_spectrum(mock_spectrum1d):
+def test_load_spectrum(mock_spectrum1d, monkeypatch):
     _ = load_spectrum('fake_file.txt')
     mock_spectrum1d.assert_called_with('fake_file.txt')
     _ = load_spectrum('fake_file.txt', spectra_format='SpeX')
     mock_spectrum1d.assert_called_with('fake_file.txt', format='SpeX')
+
+    # Testing user-set environment variable
+    monkeypatch.setenv('FAKE_ENV', '/User/path')
+    _ = load_spectrum('$FAKE_ENV/to/my/fake_file.txt')
+    mock_spectrum1d.assert_called_with('/User/path/to/my/fake_file.txt')
