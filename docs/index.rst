@@ -15,15 +15,16 @@ Introduction
 Astronomical databases tend to focus on targets or observations with ancillary data that support them.
 **Astrodbkit2** is designed to work with these types of databases and adopts several principles
 for some of its more advanced features. These are:
+
  - There exists a primary table with object identifiers
  - There exists any number of supplementary tables that either refer back to the primary table or exist independently
 
 For example, the `SIMPLE database <https://github.com/SIMPLE-AstroDB/SIMPLE-db>`_
 (which was the initial design for **Astrodbkit2**) contains:
+
  - the primary Sources table, with coordinate information for each target
  - several object data tables, like Photometry, Spectra, etc, that contain information for each target
- - reference tables, like Publications, Telescopes, etc, that list other information that is used
-   throughout the database, but doesn't refer to a particular target
+ - reference tables, like Publications, Telescopes, etc, that list other information that is used throughout the database, but doesn't refer to a particular target
 
 The goal of **Astrodbkit2** is to link together the object tables together in order
 to express them as a single entity, while still retaining the information for other reference tables.
