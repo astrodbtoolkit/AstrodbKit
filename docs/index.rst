@@ -239,7 +239,8 @@ General Queries with Transformations
 As part of version 0.2, **Astrodbkit2** can convert columns to special types.
 Currently, spectra transformations are implemented and the specified column would be converted to a `Spectrum1D` object
 using the `specutils package <https://specutils.readthedocs.io/en/stable/>`_.
-To call this, users can supply the name of the column to convert (by default, this is *spectrum*)::
+To call this, users can supply the name of the column to convert
+(by default, none is converted, though .spectra assumes the column name is *spectrum*)::
 
     db.query(db.Spectra).astropy(spectra='spectrum')
     db.query(db.Spectra).pandas(spectra=['spectrum'])
