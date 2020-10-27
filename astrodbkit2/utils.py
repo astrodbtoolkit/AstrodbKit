@@ -10,11 +10,13 @@ from astroquery.simbad import Simbad
 __all__ = ['json_serializer', 'get_simbad_names']
 
 
-# From StackOverflow
-# https://stackoverflow.com/questions/49802412/how-to-implement-deprecation-in-python-with-argument-alias
-# in order to handle deprecation of renamed columns
-# To use: add @deprecated_alias(old_name='new_name')
 def deprecated_alias(**aliases):
+    """
+    Decorator from StackOverflow
+    https://stackoverflow.com/questions/49802412/how-to-implement-deprecation-in-python-with-argument-alias
+    in order to handle deprecation of renamed columns
+    To use: add @deprecated_alias(old_name='new_name')
+    """
     def deco(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -25,6 +27,7 @@ def deprecated_alias(**aliases):
 
 
 def rename_kwargs(func_name, kwargs, aliases):
+    """Helper function used be deprecated_alias"""
     for alias, new in aliases.items():
         if alias in kwargs:
             if new in kwargs:
