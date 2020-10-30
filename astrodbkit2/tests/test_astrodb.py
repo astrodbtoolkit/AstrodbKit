@@ -3,6 +3,7 @@
 import os
 import json
 import pytest
+import io
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
@@ -110,9 +111,26 @@ def test_add_data(db):
     db.SpectralTypes.insert().execute(spt_data)
 
 
+def test_add_tabular_data(db):
+    # Test the add_tabular_data method
+    file = io.StringIO("""source,band,magnitude,telescope,reference
+2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12
+2MASS J13571237+1428398,WISE_W4,9.56,WISE,Cutr12
+Not in DB,WISE_W4,0,WISE,Cutr12
+""")
+    with pytest.raises(RuntimeError):
+        db.add_tabular_data(file, 'Photometry')
+
+    file = io.StringIO("""source,band,magnitude,telescope,reference,extra column
+2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12,blah blah
+""")
+    db.add_tabular_data(file, 'Photometry')
+
+
 def test_query_data(db):
     # Perform some example queries and confirm the results
     assert db.query(db.Publications).count() == 2
+    assert db.query(db.Photometry).count() == 3
     assert db.query(db.Sources).count() == 2
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
@@ -137,7 +155,7 @@ def test_search_object(mock_simbad, db):
 
     # Search but return Photometry
     t = db.search_object('1357', output_table='Photometry')
-    assert len(t) == 2
+    assert len(t) == 3
 
     # Two searches providing tables that do not exist
     with pytest.raises(RuntimeError):
@@ -228,6 +246,9 @@ def test_inventory(db):
                                  'epoch': None, 'comments': None, 'reference': 'Cutr12'},
                                 {'band': 'WISE_W2', 'ucd': None, 'magnitude': 12.99,
                                  'magnitude_error': 0.028, 'telescope': 'WISE', 'instrument': None,
+                                 'epoch': None, 'comments': None, 'reference': 'Cutr12'},
+                                {'band': 'WISE_W3', 'ucd': None, 'magnitude': 12.48,
+                                 'magnitude_error': None, 'telescope': 'WISE', 'instrument': None,
                                  'epoch': None, 'comments': None, 'reference': 'Cutr12'}],
                  'SpectralTypes': [{'spectral_type': 13,
                                     'spectral_type_error': None,
@@ -275,7 +296,7 @@ def test_load_database(db, db_dir):
     assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
     db.load_database(db_dir, verbose=True)
     assert db.query(db.Publications).count() == 2
-    assert db.query(db.Photometry).count() == 2
+    assert db.query(db.Photometry).count() == 3
     assert db.query(db.Sources).count() == 2
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 

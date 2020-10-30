@@ -236,7 +236,7 @@ to pass direct SQL queries to the database for users who may wish to write their
 General Queries with Transformations
 ------------------------------------
 
-As part of version 0.2, **Astrodbkit2** can convert columns to special types.
+**Astrodbkit2** can convert columns to special types.
 Currently, spectra transformations are implemented and the specified column would be converted to a `Spectrum1D` object
 using the `specutils package <https://specutils.readthedocs.io/en/stable/>`_.
 To call this, users can supply the name of the column to convert
@@ -274,6 +274,13 @@ The simplest way to add data to an existing database is to construct a list of d
                      'reference': 'Schm10',
                      'shortname': '1357+1428'}]
     db.Sources.insert().execute(sources_data)
+
+As a convenience method, users can use the :py:meth:`~astrodbkit2.astrodb.Database.add_tabular_data` method
+to load user-supplied tables into database tables. If not loading the primary table, the code will first check for
+missing sources and print those out for the user to correct them. Column names should match those in the database, but
+extra columns in the supplied table are ignored. Currently, only csv-formatted data is supported. For example::
+
+    db.add_tabular_data('my_file.csv', table='Photometry', fmt='csv')
 
 Updating Data
 -------------

@@ -4,6 +4,7 @@ __all__ = ['__version__', 'Database', 'or_', 'and_', 'create_database']
 
 import os
 import json
+import numpy as np
 import pandas as pd
 from astropy.table import Table as AstropyTable
 from sqlalchemy.orm import sessionmaker
@@ -585,6 +586,44 @@ class Database:
             self.save_json(row, directory)
 
     # Object input methods
+    def add_tabular_data(self, file, table, fmt='csv'):
+        """
+        Method to insert data into the database. Column names in the file must match those of the database table.
+        Additional columns in the supplied table are ignored.
+
+        Parameters
+        ----------
+        file : str
+            Name of file to load
+        table : str
+            Name of table to insert records into
+        fmt : str
+            File format. Default: csv
+        """
+
+        if fmt.lower() == 'csv':
+            df = pd.read_csv(file)
+        else:
+            raise RuntimeError(f'Unrecognized format {fmt}')
+
+        # Foreign key constraints will prevent inserts of missing sources,
+        # but for clarity we'll check first and exit if there are missing sources
+        if table != self._primary_table:
+            source_list = df[self._foreign_key].to_list()
+            primary_column = self.metadata.tables[self._primary_table].columns[self._primary_table_key]
+            matched_sources = self.query(primary_column).filter(primary_column.in_(source_list)).all()
+            missing_sources = np.setdiff1d(source_list, matched_sources)
+            if len(missing_sources) > 0:
+                print(f'{len(missing_sources)} missing source(s):')
+                print(missing_sources)
+                raise RuntimeError(f'There are missing entries in {self._primary_table} table. These must exist first.')
+
+        # Convert format for SQLAlchemy
+        data = [row.to_dict() for _, row in df.iterrows()]
+
+        # Load into specified table
+        self.metadata.tables[table].insert().execute(data)
+
     def load_table(self, table, directory):
         """
         Load a reference table to the database, expects there to be a file of the form [table].json
