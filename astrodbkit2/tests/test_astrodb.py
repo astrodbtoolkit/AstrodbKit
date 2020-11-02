@@ -111,20 +111,20 @@ def test_add_data(db):
     db.SpectralTypes.insert().execute(spt_data)
 
 
-def test_add_tabular_data(db):
-    # Test the add_tabular_data method
+def test_add_table_data(db):
+    # Test the add_table_data method
     file = io.StringIO("""source,band,magnitude,telescope,reference
 2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12
 2MASS J13571237+1428398,WISE_W4,9.56,WISE,Cutr12
 Not in DB,WISE_W4,0,WISE,Cutr12
 """)
     with pytest.raises(RuntimeError):
-        db.add_tabular_data(file, 'Photometry')
+        db.add_table_data(file, 'Photometry')
 
     file = io.StringIO("""source,band,magnitude,telescope,reference,extra column
 2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12,blah blah
 """)
-    db.add_tabular_data(file, 'Photometry')
+    db.add_table_data(file, 'Photometry')
 
 
 def test_query_data(db):

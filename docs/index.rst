@@ -275,7 +275,7 @@ The simplest way to add data to an existing database is to construct a list of d
                      'shortname': '1357+1428'}]
     db.Sources.insert().execute(sources_data)
 
-As a convenience method, users can use the :py:meth:`~astrodbkit2.astrodb.Database.add_tabular_data` method
+As a convenience method, users can use the :py:meth:`~astrodbkit2.astrodb.Database.add_table_data` method
 to load user-supplied tables into database tables. If not loading the primary table, the code will first check for
 missing sources and print those out for the user to correct them. Column names should match those in the database, but
 extra columns in the supplied table are ignored. Currently, only csv-formatted data is supported. For example::

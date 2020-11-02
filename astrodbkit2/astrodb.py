@@ -586,7 +586,7 @@ class Database:
             self.save_json(row, directory)
 
     # Object input methods
-    def add_tabular_data(self, file, table, fmt='csv'):
+    def add_table_data(self, file, table, fmt='csv'):
         """
         Method to insert data into the database. Column names in the file must match those of the database table.
         Additional columns in the supplied table are ignored.
