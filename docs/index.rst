@@ -280,7 +280,7 @@ to load user-supplied tables into database tables. If not loading the primary ta
 missing sources and print those out for the user to correct them. Column names should match those in the database, but
 extra columns in the supplied table are ignored. Currently, only csv-formatted data is supported. For example::
 
-    db.add_tabular_data('my_file.csv', table='Photometry', fmt='csv')
+    db.add_table_data('my_file.csv', table='Photometry', fmt='csv')
 
 Updating Data
 -------------
