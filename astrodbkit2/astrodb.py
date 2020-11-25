@@ -591,9 +591,11 @@ class Database:
         Method to insert data into the database. Column names in the file must match those of the database table.
         Additional columns in the supplied table are ignored.
         Format options include:
+
          - csv
          - astropy
          - pandas
+
 
         Parameters
         ----------
