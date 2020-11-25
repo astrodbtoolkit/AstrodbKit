@@ -7,6 +7,7 @@ import io
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
+from astropy.io import ascii
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
 try:
@@ -121,10 +122,25 @@ Not in DB,WISE_W4,0,WISE,Cutr12
     with pytest.raises(RuntimeError):
         db.add_table_data(file, 'Photometry')
 
-    file = io.StringIO("""source,band,magnitude,telescope,reference,extra column
+    # Actual data to load
+    string_data = """source,band,magnitude,telescope,reference,extra column
 2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12,blah blah
-""")
+"""
+
+    # Load as mocked CSV file
+    file = io.StringIO(string_data)
     db.add_table_data(file, 'Photometry')
+
+    # Delete and re-add as pandas DataFrame
+    db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3').execute()
+    file = io.StringIO(string_data)
+    data = pd.read_csv(file)
+    db.add_table_data(data, 'Photometry', fmt='pandas')
+
+    # Delete and re-add as astropy Table
+    db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3').execute()
+    data = ascii.read(string_data, format='csv')
+    db.add_table_data(data, 'Photometry', fmt='astropy')
 
 
 def test_query_data(db):

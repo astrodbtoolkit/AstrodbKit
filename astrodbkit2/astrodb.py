@@ -586,23 +586,31 @@ class Database:
             self.save_json(row, directory)
 
     # Object input methods
-    def add_table_data(self, file, table, fmt='csv'):
+    def add_table_data(self, data, table, fmt='csv'):
         """
         Method to insert data into the database. Column names in the file must match those of the database table.
         Additional columns in the supplied table are ignored.
+        Format options include:
+         - csv
+         - astropy
+         - pandas
 
         Parameters
         ----------
-        file : str
-            Name of file to load
+        data : str or astropy.Table or pandas.DataFrame
+            Name of file or Table or DataFrame to load
         table : str
             Name of table to insert records into
         fmt : str
-            File format. Default: csv
+            Data format. Default: csv
         """
 
         if fmt.lower() == 'csv':
-            df = pd.read_csv(file)
+            df = pd.read_csv(data)
+        elif fmt.lower() == 'astropy':
+            df = data.to_pandas()
+        elif fmt.lower() == 'pandas':
+            df = data.copy()
         else:
             raise RuntimeError(f'Unrecognized format {fmt}')
 

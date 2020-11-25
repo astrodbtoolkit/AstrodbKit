@@ -278,7 +278,9 @@ The simplest way to add data to an existing database is to construct a list of d
 As a convenience method, users can use the :py:meth:`~astrodbkit2.astrodb.Database.add_table_data` method
 to load user-supplied tables into database tables. If not loading the primary table, the code will first check for
 missing sources and print those out for the user to correct them. Column names should match those in the database, but
-extra columns in the supplied table are ignored. Currently, only csv-formatted data is supported. For example::
+extra columns in the supplied table are ignored.
+Currently, csv-formatted data, astropy Tables, and pandas DataFrames are supported.
+For example::
 
     db.add_table_data('my_file.csv', table='Photometry', fmt='csv')
 
@@ -296,7 +298,7 @@ This example sets the shortname for a row that matches a Source with source name
 Deleting Data
 -------------
 
-Deleting rows can also be done. Here's an example that delets all photometry with band name of WISE_W1::
+Deleting rows can also be done. Here's an example that deletes all photometry with band name of WISE_W1::
 
     db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W1').execute()
 
