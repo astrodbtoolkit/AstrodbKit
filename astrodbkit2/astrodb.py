@@ -565,6 +565,7 @@ class Database:
 
         # Clear existing files first from that directory
         if clear_first:
+            print('Clearing existing JSON files...')
             for filename in os.listdir(directory):
                 os.remove(os.path.join(directory, filename))
 
