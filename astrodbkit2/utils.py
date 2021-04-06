@@ -114,5 +114,9 @@ def get_simbad_names(name):
     """
 
     t = Simbad.query_objectids(name)
-    temp = [_name_formatter(s) for s in t['ID'].tolist()]
-    return [s for s in temp if s is not None and s != '']
+    if t is not None and len(t) > 0:
+        temp = [_name_formatter(s) for s in t['ID'].tolist()]
+        return [s for s in temp if s is not None and s != '']
+    else:
+        print(f'No Simbad match for {name}')
+        return [name]

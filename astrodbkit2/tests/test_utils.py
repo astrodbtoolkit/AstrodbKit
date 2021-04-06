@@ -52,3 +52,9 @@ def test_get_simbad_names(mock_simbad):
     t = get_simbad_names('twa 27')
     assert len(t) == 3
     assert t[2] == 'name 3'
+
+    # Example with no Simbad match
+    mock_simbad.return_value = None
+    t = get_simbad_names('WISEU J005559.88+594745.0')
+    assert len(t) == 1
+    assert t[0] == 'WISEU J005559.88+594745.0'
