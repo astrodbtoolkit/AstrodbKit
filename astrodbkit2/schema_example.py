@@ -78,7 +78,7 @@ class SpectralTypes(Base):
     source = Column(String(100), ForeignKey('Sources.source', ondelete='cascade', onupdate='cascade'), nullable=False, primary_key=True)
     spectral_type = Column(Float)
     spectral_type_error = Column(Float)
-    regime = Column(Enum(Regime), primary_key=True)  # restricts to a few values: Optical, Infrared
+    regime = Column(Enum(Regime, create_constraint=True), primary_key=True)  # restricts to a few values: Optical, Infrared
     best = Column(Boolean)  # flag for indicating if this is the best measurement or not
     comments = Column(String(1000))
     reference = Column(String(30), ForeignKey('Publications.name', ondelete='cascade'), primary_key=True)
