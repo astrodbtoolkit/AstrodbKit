@@ -88,7 +88,8 @@ class AstrodbQuery(Query):
             DataFrame output of query
         """
 
-        df = pd.DataFrame(self.all())
+        # Relying on astropy to convert to pandas for simplicity as that handles the column names
+        df = self._make_astropy().to_pandas()
 
         # Apply spectra conversion
         if spectra is not None:
