@@ -564,17 +564,17 @@ class Database:
         match_column = self._foreign_key
         if output_table == self._primary_table:
             match_column = self._primary_table_key
-        coordinate_match_column = self._foreign_key
-        if coordinate_table == self._primary_table:
-            coordinate_match_column = self._primary_table_key
 
         # Grab the specified coordinate table (Sources by default) to construct SkyCoord objects
-        # This is adapted from the original astrodbkit code
         if coordinate_table is None:
             coordinate_table = self._primary_table
         if coordinate_table not in self.metadata.tables:
             raise RuntimeError(f'Table {coordinate_table} is not in the database')
+        coordinate_match_column = self._foreign_key
+        if coordinate_table == self._primary_table:
+            coordinate_match_column = self._primary_table_key
 
+        # This is adapted from the original astrodbkit code
         df = self.query(self.metadata.tables[coordinate_table]).pandas()
         df[['ra', 'dec']] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
         mask = df['ra'].isnull()
