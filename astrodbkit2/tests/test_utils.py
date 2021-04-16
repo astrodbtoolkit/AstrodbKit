@@ -6,7 +6,8 @@ from datetime import datetime
 from decimal import Decimal
 from io import StringIO
 from astropy.table import Table
-from astrodbkit2.utils import json_serializer, get_simbad_names, _name_formatter, datetime_json_parser
+from astrodbkit2.utils import json_serializer, get_simbad_names, _name_formatter, datetime_json_parser, \
+    angular_separation
 try:
     import mock
 except ImportError:
@@ -58,3 +59,12 @@ def test_get_simbad_names(mock_simbad):
     t = get_simbad_names('WISEU J005559.88+594745.0')
     assert len(t) == 1
     assert t[0] == 'WISEU J005559.88+594745.0'
+
+
+@pytest.mark.parametrize('test_input, expected', [
+    ((0, 0), 147.60),
+    ((209.3, 14.4), 0.07774),
+])
+def test_angular_separation(test_input, expected):
+    data_dict = {'ra': 209.301675, 'dec': 14.477722}
+    assert angular_separation(data_dict, *test_input) == pytest.approx(expected, 1/60.)

@@ -14,7 +14,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
 from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
-from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
+from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser, angular_separation
 from .spectra import load_spectrum
 
 try:
@@ -411,7 +411,7 @@ class Database:
     @deprecated_alias(format='fmt')
     def search_object(self, name, output_table=None, resolve_simbad=False,
                       table_names={'Sources': ['source', 'shortname'], 'Names': ['other_name']},
-                      fmt='default', fuzzy_search=True, verbose=True):
+                      fmt='table', fuzzy_search=True, verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -429,7 +429,7 @@ class Database:
             Dictionary of tables to search for name information. Should be of the form table name: column name list.
             Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
         fmt : str
-            Format to return results in (pandas, astropy/table, default)
+            Format to return results in (pandas, astropy/table, default). Default is atropy table
         fuzzy_search : bool
             Flag to perform partial searches on provided names (default: True)
         verbose : bool
@@ -523,6 +523,76 @@ class Database:
         temp = self.engine.execute(query).fetchall()
 
         return self._handle_format(temp, fmt)
+
+    def cone_search(self, ra, dec, radius=10, output_table=None, fmt='table',
+                    coordinate_table=None, ra_col='ra', dec_col='dec'):
+        """
+        Perform a cone search of the given object against the coordinate table and return the output table
+
+        Parameters
+        ----------
+        ra : float
+            RA value to search around in degrees
+        dec : float
+            Dec value to search around in degrees
+        radius : float
+            Radius in arcseconds in which to search for objects. Default: 10 arcseconds
+        output_table : str
+            Name of table to match. Default: primary table (eg, Sources)
+        fmt : str
+            Format to return results in (pandas, astropy/table, default). Default is atropy table
+        coordinate_table : str
+            Table to use for coordinates. Default: primary table (eg, Sources)
+        ra_col : str
+            Name of column to use for RA values. Default: ra
+        dec_col : str
+            Name of column to use for Dec values. Default: dec
+
+        Returns
+        -------
+        List of SQLAlchemy results
+        """
+
+        # Set table to output and verify it exists
+        if output_table is None:
+            output_table = self._primary_table
+        if output_table not in self.metadata.tables:
+            raise RuntimeError(f'Table {output_table} is not in the database')
+
+        # Get the column name to use for matching
+        match_column = self._foreign_key
+        if output_table == self._primary_table:
+            match_column = self._primary_table_key
+        coordinate_match_column = self._foreign_key
+        if coordinate_table == self._primary_table:
+            coordinate_match_column = self._primary_table_key
+
+        # Grab the specified coordinate table (Sources by default) to construct SkyCoord objects
+        # This is adapted from the original astrodbkit code
+        if coordinate_table is None:
+            coordinate_table = self._primary_table
+        if coordinate_table not in self.metadata.tables:
+            raise RuntimeError(f'Table {coordinate_table} is not in the database')
+
+        df = self.query(self.metadata.tables[coordinate_table]).pandas()
+        df[['ra', 'dec']] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
+        mask = df['ra'].isnull()
+        df = df[~mask]
+        df['theta'] = df.apply(angular_separation, axis=1, args=(ra, dec))
+        good = df['theta'] <= radius / 3600.  # note the conversion of radius to degrees
+
+        if sum(good) > 0:
+            matched_list = df[coordinate_match_column][good]
+        else:
+            matched_list = []
+
+        # Join the matched sources with the desired table
+        temp = self.query(self.metadata.tables[output_table]). \
+            filter(self.metadata.tables[output_table].columns[match_column].in_(matched_list)). \
+            all()
+        results = self._handle_format(temp, fmt)
+
+        return results
 
     # Object output methods
     def save_json(self, name, directory):
