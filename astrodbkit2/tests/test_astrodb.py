@@ -182,7 +182,7 @@ def test_search_object(mock_simbad, db):
 
 def test_cone_search(db):
     t = db.cone_search(0, 0)
-    assert len(t) == 0, 'Found source around 0,0 when there should be any'
+    assert len(t) == 0, 'Found source around 0,0 when there should be none'
 
     t = db.cone_search(ra=209.301675, dec=14.477722)
     assert len(t) == 1
