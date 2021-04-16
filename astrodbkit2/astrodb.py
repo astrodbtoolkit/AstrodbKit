@@ -527,7 +527,8 @@ class Database:
     def cone_search(self, ra, dec, radius=10, output_table=None, fmt='table',
                     coordinate_table=None, ra_col='ra', dec_col='dec'):
         """
-        Perform a cone search of the given object against the coordinate table and return the output table
+        Perform a cone search of the given coordinates and return the specifed output table.
+        RA/Dec should be in degrees, but radius is expected in arcseconds.
 
         Parameters
         ----------
