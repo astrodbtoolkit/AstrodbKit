@@ -129,6 +129,9 @@ And users can also examine column information for an existing table::
 Specialized Searches
 --------------------
 
+Identifier (name) Search
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 To search for an object by name, users can use the :py:meth:`~astrodbkit2.astrodb.Database.search_object`
 method to do fuzzy searches on the provided name, output results from any table,
 and also include alternate Simbad names for their source. Refer to the API documentation for full details.
@@ -144,6 +147,9 @@ Search for TWA 27 and any of its alternate designations from Simbad and return r
 Search for any source with 1357+1428 in its name and return results from the Photometry table in pandas Dataframe format::
 
     db.search_object('1357+1428', output_table='Photometry', fmt='astropy')
+
+Inventory Search
+~~~~~~~~~~~~~~~~
 
 **Astrodbkit2**  also contains an :py:meth:`~astrodbkit2.astrodb.Database.inventory` method to return all data for a source by its name::
 
@@ -189,6 +195,9 @@ The pretty_print parameter can be passed to print out results to the screen in a
             ...
         ]
     }
+
+Cone (spatial) Search
+~~~~~~~~~~~~~~~~~~~~~
 
 Another query method available in **Astrodbkit2**  is :py:meth:`~astrodbkit2.astrodb.Database.cone_search`.
 This performs a search around a given ra/dec location for sources in the database with a radius specified in arcseconds::
