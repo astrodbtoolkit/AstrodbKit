@@ -190,6 +190,18 @@ The pretty_print parameter can be passed to print out results to the screen in a
         ]
     }
 
+Another query method available in **Astrodbkit2**  is :py:meth:`~astrodbkit2.astrodb.Database.cone_search`.
+This performs a search around a given ra/dec location for sources in the database with a radius specified in arcseconds::
+
+    db.cone_search(ra=209.301675, dec=14.477722, radius=60.)
+
+Similar to :py:meth:`~astrodbkit2.astrodb.Database.search_object`, a variety of options can be passed to control the output.
+If the table with coordinate information is not the primary table, it can be specifed as well::
+
+    db.cone_search(ra=209., dec=14., radius=60., output_table='Photometry')  # returning Photometry results for this search
+    db.cone_search(ra=209., dec=14., radius=60., fmt='pandas')  # returning as a pandas DataFrame
+    db.cone_search(ra=209., dec=14., radius=60., coordinate_table='Sources', ra_col='ra', dec_col='dec')  # specifying the name of the table with coordinate information
+
 General Queries
 --------------------
 
