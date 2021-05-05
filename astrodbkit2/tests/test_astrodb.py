@@ -7,6 +7,7 @@ import io
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
+from astropy.units.quantity import Quantity
 from astropy.io import ascii
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
@@ -193,7 +194,15 @@ def test_cone_search(db):
     assert len(t) == 1
     assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
 
+    t = db.cone_search(ra=209.301675, dec=14.477722, radius=Quantity(20, unit='arcsec'))
+    assert len(t) == 1
+    assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
+
     t = db.cone_search(209.302, 14.478, radius=60.)
+    print(t)
+    assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
+
+    t = db.cone_search(209.302, 14.478, radius=Quantity(1., unit='arcmin'))
     print(t)
     assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
 

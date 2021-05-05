@@ -8,7 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from astroquery.simbad import Simbad
 
-__all__ = ['json_serializer', 'get_simbad_names', 'angular_separation']
+__all__ = ['json_serializer', 'get_simbad_names']
 
 
 def deprecated_alias(**aliases):
@@ -121,39 +121,3 @@ def get_simbad_names(name):
     else:
         print(f'No Simbad match for {name}')
         return [name]
-
-
-def angular_separation(row, ra1, dec1):
-    """
-    Calculate angular separation between two coordinates
-    Uses Vicenty Formula (http://en.wikipedia.org/wiki/Great-circle_distance) and adapts from astropy's SkyCoord
-    Written to be used within the Database.cone_search() method and adapted from the original astrodbkit implementation
-
-    Parameters
-    ----------
-    row: dict, pandas Row
-        Coordinate structure containing ra and dec keys in decimal degrees
-    ra1: float
-        RA to compare with, in decimal degrees
-    dec1: float
-        Dec to compare with, in decimal degrees
-
-    Returns
-    -------
-        Angular distance, in degrees, between the coordinates
-    """
-
-    factor = np.pi / 180
-    sdlon = np.sin((row['ra'] - ra1) * factor)  # RA is longitude
-    cdlon = np.cos((row['ra'] - ra1) * factor)
-    slat1 = np.sin(dec1 * factor)  # Dec is latitude
-    slat2 = np.sin(row['dec'] * factor)
-    clat1 = np.cos(dec1 * factor)
-    clat2 = np.cos(row['dec'] * factor)
-
-    num1 = clat2 * sdlon
-    num2 = clat1 * slat2 - slat1 * clat2 * cdlon
-    numerator = np.sqrt(num1 ** 2 + num2 ** 2)
-    denominator = slat1 * slat2 + clat1 * clat2 * cdlon
-
-    return np.arctan2(numerator, denominator) / factor

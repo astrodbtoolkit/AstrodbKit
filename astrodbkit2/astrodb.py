@@ -7,6 +7,8 @@ import json
 import numpy as np
 import pandas as pd
 from astropy.table import Table as AstropyTable
+from astropy.units.quantity import Quantity
+from astropy.coordinates import SkyCoord
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,7 +16,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
 from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
-from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser, angular_separation
+from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
 from .spectra import load_spectrum
 
 try:
@@ -524,11 +526,11 @@ class Database:
 
         return self._handle_format(temp, fmt)
 
-    def cone_search(self, ra, dec, radius=10, output_table=None, fmt='table',
-                    coordinate_table=None, ra_col='ra', dec_col='dec'):
+    def cone_search(self, ra, dec, radius=Quantity(10, unit='arcsec'), output_table=None, fmt='table',
+                    coordinate_table=None, ra_col='ra', dec_col='dec', frame='icrs', unit='deg'):
         """
         Perform a cone search of the given coordinates and return the specifed output table.
-        RA/Dec should be in degrees, but radius is expected in arcseconds.
+        RA/Dec should be in the same units as the database, radius by default is expected in arcseconds.
 
         Parameters
         ----------
@@ -536,8 +538,9 @@ class Database:
             RA value to search around in degrees
         dec : float
             Dec value to search around in degrees
-        radius : float
-            Radius in arcseconds in which to search for objects. Default: 10 arcseconds
+        radius : Quantity or float
+            Radius as an astropy Quantity object in which to search for objects.
+            If not a Quantity will convert to one assuming units are arcseconds. Default: 10 arcseconds
         output_table : str
             Name of table to match. Default: primary table (eg, Sources)
         fmt : str
@@ -548,6 +551,10 @@ class Database:
             Name of column to use for RA values. Default: ra
         dec_col : str
             Name of column to use for Dec values. Default: dec
+        frame : str
+            Coordinate frame for objects in the database. Default: icrs
+        unit : str or tuple of Unit or str
+            Unit of ra/dec (or equivalent) in database. Default: deg
 
         Returns
         -------
@@ -559,6 +566,10 @@ class Database:
             output_table = self._primary_table
         if output_table not in self.metadata.tables:
             raise RuntimeError(f'Table {output_table} is not in the database')
+
+        # Radius conversion
+        if not isinstance(radius, Quantity):
+            radius = Quantity(radius, unit='arcsec')
 
         # Get the column name to use for matching
         match_column = self._foreign_key
@@ -579,8 +590,12 @@ class Database:
         df[['ra', 'dec']] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
         mask = df['ra'].isnull()
         df = df[~mask]
-        df['theta'] = df.apply(angular_separation, axis=1, args=(ra, dec))
-        good = df['theta'] <= radius / 3600.  # note the conversion of radius to degrees
+
+        # Native use of astropy SkyCoord objects here
+        target_center = SkyCoord(ra, dec, frame=frame, unit=unit)
+        coord_list = SkyCoord(df['ra'].tolist(), df['dec'].tolist(), frame=frame, unit=unit)
+        sep_list = coord_list.separation(target_center)  # sky separations for each db object against target position
+        good = sep_list <= radius
 
         if sum(good) > 0:
             matched_list = df[coordinate_match_column][good]
