@@ -7,6 +7,7 @@ import io
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
 from astropy.units.quantity import Quantity
 from astropy.io import ascii
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
@@ -186,34 +187,34 @@ def test_search_object(mock_simbad, db):
         t = db.search_object('fake', table_names={'NOTABLE': ['nocolumn']})
 
 
-def test_cone_search(db):
-    t = db.cone_search(0, 0)
+def test_query_region(db):
+    t = db.query_region(SkyCoord(0, 0, frame='icrs', unit='deg'))
     assert len(t) == 0, 'Found source around 0,0 when there should be none'
 
-    t = db.cone_search(ra=209.301675, dec=14.477722)
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'))
     assert len(t) == 1
     assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
 
-    t = db.cone_search(ra=209.301675, dec=14.477722, radius=Quantity(20, unit='arcsec'))
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'), radius=Quantity(20, unit='arcsec'))
     assert len(t) == 1
     assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
 
-    t = db.cone_search(209.302, 14.478, radius=60.)
+    t = db.query_region(SkyCoord(209.302, 14.478, frame='icrs', unit='deg'), radius=60.)
     print(t)
     assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
 
-    t = db.cone_search(209.302, 14.478, radius=Quantity(1., unit='arcmin'))
+    t = db.query_region(SkyCoord(209.302, 14.478, frame='icrs', unit='deg'), radius=Quantity(1., unit='arcmin'))
     print(t)
     assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
 
-    t = db.cone_search(ra=209.301675, dec=14.477722, output_table='Photometry')
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'), output_table='Photometry')
     assert len(t) == 3, 'Did not return 3 photometry values'
 
     # Two searches providing tables that do not exist
     with pytest.raises(RuntimeError):
-        t = db.cone_search(ra=209, dec=14, output_table='NOTABLE')
+        t = db.query_region(SkyCoord(209, 14, frame='icrs', unit='deg'), output_table='NOTABLE')
     with pytest.raises(RuntimeError):
-        t = db.cone_search(ra=209, dec=14, coordinate_table='NOTABLE')
+        t = db.query_region(SkyCoord(209, 14, frame='icrs', unit='deg'), coordinate_table='NOTABLE')
 
 
 def test_sql_query(db):

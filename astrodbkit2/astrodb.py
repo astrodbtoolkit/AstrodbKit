@@ -526,18 +526,15 @@ class Database:
 
         return self._handle_format(temp, fmt)
 
-    def cone_search(self, ra, dec, radius=Quantity(10, unit='arcsec'), output_table=None, fmt='table',
+    def query_region(self, target_coords, radius=Quantity(10, unit='arcsec'), output_table=None, fmt='table',
                     coordinate_table=None, ra_col='ra', dec_col='dec', frame='icrs', unit='deg'):
         """
-        Perform a cone search of the given coordinates and return the specifed output table.
-        RA/Dec should be in the same units as the database, radius by default is expected in arcseconds.
+        Perform a cone search of the given coordinates and return the specified output table.
 
         Parameters
         ----------
-        ra : float
-            RA value to search around in degrees
-        dec : float
-            Dec value to search around in degrees
+        target_coords : SkyCoord
+            Astropy SkyCoord object of coordinates to search around
         radius : Quantity or float
             Radius as an astropy Quantity object in which to search for objects.
             If not a Quantity will convert to one assuming units are arcseconds. Default: 10 arcseconds
@@ -592,9 +589,8 @@ class Database:
         df = df[~mask]
 
         # Native use of astropy SkyCoord objects here
-        target_center = SkyCoord(ra, dec, frame=frame, unit=unit)
         coord_list = SkyCoord(df['ra'].tolist(), df['dec'].tolist(), frame=frame, unit=unit)
-        sep_list = coord_list.separation(target_center)  # sky separations for each db object against target position
+        sep_list = coord_list.separation(target_coords)  # sky separations for each db object against target position
         good = sep_list <= radius
 
         if sum(good) > 0:
