@@ -174,7 +174,7 @@ def set_sqlite():
         cursor.close()
 
 
-def create_database(connection_string):
+def create_database(connection_string, drop_tables=False):
     """
     Create a database from a schema that utilizes the `astrodbkit2.astrodb.Base` class.
     Some databases, eg Postgres, must already exist but any tables should be dropped.
@@ -183,10 +183,13 @@ def create_database(connection_string):
     ----------
     connection_string : str
         Connection string to database
+    drop_tables : bool
+        Flag to drop existing tables. This is needed when the schema changes. (Default: False)
     """
 
     session, base, engine = load_connection(connection_string, base=Base)
-    # base.metadata.drop_all()  # drop all the tables
+    if drop_tables:
+        base.metadata.drop_all()
     base.metadata.create_all()  # this explicitly creates the database
 
 
