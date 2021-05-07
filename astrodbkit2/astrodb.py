@@ -541,7 +541,7 @@ class Database:
         output_table : str
             Name of table to match. Default: primary table (eg, Sources)
         fmt : str
-            Format to return results in (pandas, astropy/table, default). Default is atropy table
+            Format to return results in (pandas, astropy/table, default). Default is astropy table
         coordinate_table : str
             Table to use for coordinates. Default: primary table (eg, Sources)
         ra_col : str
