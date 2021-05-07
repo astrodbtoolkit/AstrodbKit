@@ -7,6 +7,8 @@ import io
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
+from astropy.units.quantity import Quantity
 from astropy.io import ascii
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
 from astrodbkit2.schema_example import *
@@ -111,6 +113,11 @@ def test_add_data(db):
     spt_data[0]['regime'] = 'infrared'
     db.SpectralTypes.insert().execute(spt_data)
 
+    # Adding source with no ra/dec to test cone search
+    sources_data = [{'source': 'Third star',
+                     'reference': 'Schm10'}]
+    db.Sources.insert().execute(sources_data)
+
 
 def test_add_table_data(db):
     # Test the add_table_data method
@@ -147,7 +154,7 @@ def test_query_data(db):
     # Perform some example queries and confirm the results
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 3
-    assert db.query(db.Sources).count() == 2
+    assert db.query(db.Sources).count() == 3
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
 
@@ -180,11 +187,41 @@ def test_search_object(mock_simbad, db):
         t = db.search_object('fake', table_names={'NOTABLE': ['nocolumn']})
 
 
+def test_query_region(db):
+    t = db.query_region(SkyCoord(0, 0, frame='icrs', unit='deg'))
+    assert len(t) == 0, 'Found source around 0,0 when there should be none'
+
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'))
+    assert len(t) == 1
+    assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
+
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'), radius=Quantity(20, unit='arcsec'))
+    assert len(t) == 1
+    assert t['source'][0] == '2MASS J13571237+1428398', 'Did not find correct source'
+
+    t = db.query_region(SkyCoord(209.302, 14.478, frame='icrs', unit='deg'), radius=60.)
+    print(t)
+    assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
+
+    t = db.query_region(SkyCoord(209.302, 14.478, frame='icrs', unit='deg'), radius=Quantity(1., unit='arcmin'))
+    print(t)
+    assert len(t) == 1, 'Did not find correct source in 1 arcmin search'
+
+    t = db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'), output_table='Photometry')
+    assert len(t) == 3, 'Did not return 3 photometry values'
+
+    # Two searches providing tables that do not exist
+    with pytest.raises(RuntimeError):
+        t = db.query_region(SkyCoord(209, 14, frame='icrs', unit='deg'), output_table='NOTABLE')
+    with pytest.raises(RuntimeError):
+        t = db.query_region(SkyCoord(209, 14, frame='icrs', unit='deg'), coordinate_table='NOTABLE')
+
+
 def test_sql_query(db):
     # Perform direct SQLite queries
     # Includes testing of _handle_format implicitly
     t = db.sql_query('SELECT * FROM Sources', fmt='default')
-    assert len(t) == 2
+    assert len(t) == 3
     assert isinstance(t, list)
     t = db.sql_query('SELECT * FROM Sources', fmt='astropy')
     assert isinstance(t, Table)
@@ -204,7 +241,7 @@ def test_sql_query(db):
 def test_query_formats(db):
     # Check that the query subclass is working properly
     t = db.query(db.Sources).astropy()
-    assert len(t) == 2
+    assert len(t) == 3
     assert isinstance(t, Table)
     t = db.query(db.Sources).table()
     assert isinstance(t, Table)
@@ -212,7 +249,7 @@ def test_query_formats(db):
     assert len(t) == 0
     assert isinstance(t, Table)
     t = db.query(db.Sources).pandas()
-    assert len(t) == 2
+    assert len(t) == 3
     assert isinstance(t, pd.DataFrame)
     t = db.query(db.Instruments).pandas()
     assert len(t) == 0
@@ -314,7 +351,7 @@ def test_load_database(db, db_dir):
     db.load_database(db_dir, verbose=True)
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 3
-    assert db.query(db.Sources).count() == 2
+    assert db.query(db.Sources).count() == 3
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Clear temporary directory and files
@@ -333,7 +370,7 @@ def test_copy_database_schema():
     db2 = Database(connection_2)
     assert db2
     assert 'source' in [c.name for c in db2.Sources.columns]
-    assert db2.query(db2.Sources).count() == 2
+    assert db2.query(db2.Sources).count() == 3
     assert db2.query(db2.Publications).count() == 2
     assert db2.query(db2.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 

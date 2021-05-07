@@ -129,6 +129,9 @@ And users can also examine column information for an existing table::
 Specialized Searches
 --------------------
 
+Identifier (name) Search
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 To search for an object by name, users can use the :py:meth:`~astrodbkit2.astrodb.Database.search_object`
 method to do fuzzy searches on the provided name, output results from any table,
 and also include alternate Simbad names for their source. Refer to the API documentation for full details.
@@ -144,6 +147,9 @@ Search for TWA 27 and any of its alternate designations from Simbad and return r
 Search for any source with 1357+1428 in its name and return results from the Photometry table in pandas Dataframe format::
 
     db.search_object('1357+1428', output_table='Photometry', fmt='astropy')
+
+Inventory Search
+~~~~~~~~~~~~~~~~
 
 **Astrodbkit2**  also contains an :py:meth:`~astrodbkit2.astrodb.Database.inventory` method to return all data for a source by its name::
 
@@ -189,6 +195,22 @@ The pretty_print parameter can be passed to print out results to the screen in a
             ...
         ]
     }
+
+Region (spatial) Search
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Another query method available in **Astrodbkit2**  is :py:meth:`~astrodbkit2.astrodb.Database.query_region`.
+This performs a cone search around a given location for sources in the database.
+It expects astropy SkyCoord and Quantity objects for the position and radius::
+
+    db.query_region(SkyCoord(209.301675, 14.477722, frame='icrs', unit='deg'), radius=Quantity(60., unit='arcsec'))
+
+Similar to :py:meth:`~astrodbkit2.astrodb.Database.search_object`, a variety of options can be passed to control the output.
+If the table with coordinate information is not the primary table, it can be specifed as well::
+
+    db.query_region(SkyCoord(209., 14., frame='icrs', unit='deg'), output_table='Photometry')  # returning Photometry results for this search
+    db.query_region(SkyCoord(209., 14., frame='icrs', unit='deg'), fmt='pandas')  # returning as a pandas DataFrame
+    db.query_region(SkyCoord(209., 14., frame='icrs', unit='deg'), coordinate_table='Sources', ra_col='ra', dec_col='dec')  # specifying the name of the table with coordinate information
 
 General Queries
 --------------------

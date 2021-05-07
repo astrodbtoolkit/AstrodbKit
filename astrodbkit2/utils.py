@@ -1,6 +1,7 @@
 # Utility functions for Astrodbkit2
 
 import re
+import numpy as np
 import functools
 import warnings
 from datetime import datetime

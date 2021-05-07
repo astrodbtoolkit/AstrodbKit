@@ -7,6 +7,8 @@ import json
 import numpy as np
 import pandas as pd
 from astropy.table import Table as AstropyTable
+from astropy.units.quantity import Quantity
+from astropy.coordinates import SkyCoord
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
@@ -414,7 +416,7 @@ class Database:
     @deprecated_alias(format='fmt')
     def search_object(self, name, output_table=None, resolve_simbad=False,
                       table_names={'Sources': ['source', 'shortname'], 'Names': ['other_name']},
-                      fmt='default', fuzzy_search=True, verbose=True):
+                      fmt='table', fuzzy_search=True, verbose=True):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -432,7 +434,7 @@ class Database:
             Dictionary of tables to search for name information. Should be of the form table name: column name list.
             Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
         fmt : str
-            Format to return results in (pandas, astropy/table, default)
+            Format to return results in (pandas, astropy/table, default). Default is astropy table
         fuzzy_search : bool
             Flag to perform partial searches on provided names (default: True)
         verbose : bool
@@ -526,6 +528,86 @@ class Database:
         temp = self.engine.execute(query).fetchall()
 
         return self._handle_format(temp, fmt)
+
+    def query_region(self, target_coords, radius=Quantity(10, unit='arcsec'), output_table=None, fmt='table',
+                    coordinate_table=None, ra_col='ra', dec_col='dec', frame='icrs', unit='deg'):
+        """
+        Perform a cone search of the given coordinates and return the specified output table.
+
+        Parameters
+        ----------
+        target_coords : SkyCoord
+            Astropy SkyCoord object of coordinates to search around
+        radius : Quantity or float
+            Radius as an astropy Quantity object in which to search for objects.
+            If not a Quantity will convert to one assuming units are arcseconds. Default: 10 arcseconds
+        output_table : str
+            Name of table to match. Default: primary table (eg, Sources)
+        fmt : str
+            Format to return results in (pandas, astropy/table, default). Default is astropy table
+        coordinate_table : str
+            Table to use for coordinates. Default: primary table (eg, Sources)
+        ra_col : str
+            Name of column to use for RA values. Default: ra
+        dec_col : str
+            Name of column to use for Dec values. Default: dec
+        frame : str
+            Coordinate frame for objects in the database. Default: icrs
+        unit : str or tuple of Unit or str
+            Unit of ra/dec (or equivalent) in database. Default: deg
+
+        Returns
+        -------
+        List of SQLAlchemy results
+        """
+
+        # Set table to output and verify it exists
+        if output_table is None:
+            output_table = self._primary_table
+        if output_table not in self.metadata.tables:
+            raise RuntimeError(f'Table {output_table} is not in the database')
+
+        # Radius conversion
+        if not isinstance(radius, Quantity):
+            radius = Quantity(radius, unit='arcsec')
+
+        # Get the column name to use for matching
+        match_column = self._foreign_key
+        if output_table == self._primary_table:
+            match_column = self._primary_table_key
+
+        # Grab the specified coordinate table (Sources by default) to construct SkyCoord objects
+        if coordinate_table is None:
+            coordinate_table = self._primary_table
+        if coordinate_table not in self.metadata.tables:
+            raise RuntimeError(f'Table {coordinate_table} is not in the database')
+        coordinate_match_column = self._foreign_key
+        if coordinate_table == self._primary_table:
+            coordinate_match_column = self._primary_table_key
+
+        # This is adapted from the original astrodbkit code
+        df = self.query(self.metadata.tables[coordinate_table]).pandas()
+        df[['ra', 'dec']] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
+        mask = df['ra'].isnull()
+        df = df[~mask]
+
+        # Native use of astropy SkyCoord objects here
+        coord_list = SkyCoord(df['ra'].tolist(), df['dec'].tolist(), frame=frame, unit=unit)
+        sep_list = coord_list.separation(target_coords)  # sky separations for each db object against target position
+        good = sep_list <= radius
+
+        if sum(good) > 0:
+            matched_list = df[coordinate_match_column][good]
+        else:
+            matched_list = []
+
+        # Join the matched sources with the desired table
+        temp = self.query(self.metadata.tables[output_table]). \
+            filter(self.metadata.tables[output_table].columns[match_column].in_(matched_list)). \
+            all()
+        results = self._handle_format(temp, fmt)
+
+        return results
 
     # Object output methods
     def save_json(self, name, directory):
