@@ -431,7 +431,7 @@ class Database:
             Dictionary of tables to search for name information. Should be of the form table name: column name list.
             Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
         fmt : str
-            Format to return results in (pandas, astropy/table, default). Default is atropy table
+            Format to return results in (pandas, astropy/table, default). Default is astropy table
         fuzzy_search : bool
             Flag to perform partial searches on provided names (default: True)
         verbose : bool
