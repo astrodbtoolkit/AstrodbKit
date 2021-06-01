@@ -13,6 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
+from tqdm import tqdm
 from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
 from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
 from .spectra import load_spectrum
@@ -584,7 +585,7 @@ class Database:
                     f.write(json.dumps(data, indent=4, default=json_serializer))
 
         # Output primary objects
-        for row in self.query(self.metadata.tables[self._primary_table]):
+        for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
             self.save_json(row, directory)
 
     # Object input methods
@@ -709,10 +710,14 @@ class Database:
 
         # Load object data
         if verbose: print('Loading object tables')
-        for file in os.listdir(directory):
+        for file in tqdm(os.listdir(directory)):
             # Skip reference tables
             core_name = file.replace('.json', '')
             if core_name in self._reference_tables:
+                continue
+
+            # Skip non-JSON files or hidden files
+            if not file.endswith('.json') or file.startswith('.'):
                 continue
 
             self.load_json(os.path.join(directory, file))
