@@ -636,6 +636,24 @@ class Database:
         with open(os.path.join(directory, filename), 'w') as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
+    def save_reference_table(self, table, directory):
+        """
+
+        Parameters
+        ----------
+        table : str
+            Name of reference table to output
+        directory : str
+            Name of directory in which to save the output JSON
+        """
+
+        results = self.session.query(self.metadata.tables[table]).all()
+        data = [row._asdict() for row in results]
+        filename = table + '.json'
+        if len(data) > 0:
+            with open(os.path.join(directory, filename), 'w') as f:
+                f.write(json.dumps(data, indent=4, default=json_serializer))
+
     def save_database(self, directory, clear_first=True):
         """
         Output contents of the database into the specified directory as JSON files.
@@ -662,12 +680,7 @@ class Database:
             if table not in self.metadata.tables.keys():
                 continue
 
-            results = self.session.query(self.metadata.tables[table]).all()
-            data = [row._asdict() for row in results]
-            filename = table + '.json'
-            if len(data) > 0:
-                with open(os.path.join(directory, filename), 'w') as f:
-                    f.write(json.dumps(data, indent=4, default=json_serializer))
+            self.save_reference_table(table, directory)
 
         # Output primary objects
         for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
