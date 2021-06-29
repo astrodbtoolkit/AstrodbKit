@@ -328,11 +328,14 @@ Saving the Database
 ===================
 
 If users perform changes to a database, they will want to output this to disk to be version controlled.
-**Astrodbkit2** provides methods to save an individual source as well as the entire data.
+**Astrodbkit2** provides methods to save an individual source or reference table as well as the entire data.
 We recommend the later to output the entire contents to disk::
 
     # Save single object
     db.save_json('2MASS J13571237+1428398', 'data')
+
+    # Save single reference table
+    db.save_reference_table('Publications', 'data')
 
     # Save entire database to directory 'data'
     db.save_database('data')
