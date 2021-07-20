@@ -100,7 +100,7 @@ def _name_formatter(name):
     return name
 
 
-def get_simbad_names(name):
+def get_simbad_names(name, verbose=False):
     """
     Get list of alternate names from Simbad
 
@@ -108,6 +108,8 @@ def get_simbad_names(name):
     ----------
     name : str
         Name to resolve
+    verbose : bool
+        Verbosity flag
 
     Returns
     -------
@@ -119,5 +121,6 @@ def get_simbad_names(name):
         temp = [_name_formatter(s) for s in t['ID'].tolist()]
         return [s for s in temp if s is not None and s != '']
     else:
-        print(f'No Simbad match for {name}')
+        if verbose:
+            print(f'No Simbad match for {name}')
         return [name]

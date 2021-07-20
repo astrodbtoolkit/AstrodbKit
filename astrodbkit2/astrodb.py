@@ -458,7 +458,7 @@ class Database:
 
         # Query Simbad to get additional names and join them to list to search
         if resolve_simbad:
-            simbad_names = get_simbad_names(name)
+            simbad_names = get_simbad_names(name, verbose=verbose)
             name = list(set(simbad_names + [name]))
             if verbose:
                 print(f'Including Simbad names, searching for: {name}')
