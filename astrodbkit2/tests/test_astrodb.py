@@ -314,6 +314,15 @@ def test_inventory(db):
     assert db.inventory('2MASS J13571237+1428398') == test_dict
 
 
+def test_save_reference_table(db, db_dir):
+    # Test saving a reference table
+    if os.path.exists(os.path.join(db_dir, 'Publications.json')):
+        os.remove(os.path.join(db_dir, 'Publications.json'))
+    db.save_reference_table('Publications', db_dir)
+    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
+    os.remove(os.path.join(db_dir, 'Publications.json'))  # explicitly removing so that the next step will get verified
+
+
 def test_save_database(db, db_dir):
     # Test saving the database to JSON files
 
