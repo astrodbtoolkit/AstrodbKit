@@ -50,6 +50,9 @@ def json_serializer(obj):
     if isinstance(obj, Decimal):
         return float(obj)
 
+    if isinstance(obj, bytes):
+        return obj.decode('utf-8')
+
     return obj.__dict__
 
 
