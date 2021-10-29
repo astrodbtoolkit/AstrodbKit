@@ -26,7 +26,8 @@ def test_name_formatter(test_input, expected):
 def test_json_serializer():
     data = {'date': datetime(2018, 12, 6, 12, 30, 0),
             'value': Decimal(2.3),
-            'integer': 4}
+            'integer': 4,
+            'bytes': b'byte'}
 
     json_text = json.dumps(data, indent=4, default=json_serializer)
     with StringIO(json_text) as f:
@@ -35,6 +36,7 @@ def test_json_serializer():
     assert new_data['date'] == '2018-12-06T12:30:00'
     assert new_data['value'] == pytest.approx(2.3)
     assert new_data['integer'] == 4
+    assert new_data['bytes'] == 'byte'
 
 
 def test_datetime_json_parser():
