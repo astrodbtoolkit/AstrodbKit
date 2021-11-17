@@ -15,6 +15,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
+import sqlite3
 from tqdm import tqdm
 from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
 from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
@@ -194,6 +195,7 @@ def create_database(connection_string, drop_tables=False):
     if drop_tables:
         base.metadata.drop_all()
     base.metadata.create_all()  # this explicitly creates the database
+    return session, base, engine
 
 
 def copy_database_schema(source_connection_string, destination_connection_string, sqlite_foreign=False,
@@ -284,8 +286,11 @@ class Database:
             Additional connection arguments, like {'check_same_thread': False}. Default: {}
         """
 
-        self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign,
-                                                               connection_arguments=connection_arguments)
+        if connection_string == 'sqlite://':
+            self.session, self.base, self.engine = create_database(connection_string)
+        else:
+            self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign,
+                                                                   connection_arguments=connection_arguments)
 
         # Convenience methods
         self.query = self.session.query
@@ -822,3 +827,9 @@ class Database:
 
             self.load_json(os.path.join(directory, file))
 
+    def dump_sqlite(self, database_name):
+        if self.engine.url.drivername == 'sqlite':
+            destconn = sqlite3.connect(database_name)
+            self.engine.raw_connection().backup(destconn)
+        else:
+            print('AstrodbKit2: dump_sqlite not available for non-sqlite databases')
