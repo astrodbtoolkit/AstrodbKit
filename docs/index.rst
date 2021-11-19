@@ -97,6 +97,27 @@ This is how SIMPLE is currently version controlled. To load a database of this f
           sources from on-disk files. We describe later how to use the :py:meth:`~astrodbkit2.astrodb.Database.save_db` method
           to produce JSON files from the existing database contents.
 
+Loading SQLite databases with Windows
+-------------------------------------
+
+Large databases may significantly slow down when attempted to load to a SQLite binary file under Windows.
+To avoid this, one can create the load database purely in memory and then connect to it when it's ready.
+For example::
+
+    from astrodbkit2.astrodb import Database
+
+    connection_string = 'sqlite:///SIMPLE.db'  # SQLite connection string
+    db_dir = 'data'  # directory where JSON files are located
+
+    # Create a temporary in-memory database and load to it
+    db = Database('sqlite://')
+    db.load_database(db_dir)
+    # Dump in-memory database to file
+    db.dump_sqlite('SIMPLE.db')
+
+    # Connect to the newly created database as usual
+    db = Database(connection_string)
+
 Querying the Database
 =====================
 
