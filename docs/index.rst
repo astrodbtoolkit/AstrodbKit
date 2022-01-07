@@ -233,6 +233,18 @@ If the table with coordinate information is not the primary table, it can be spe
     db.query_region(SkyCoord(209., 14., frame='icrs', unit='deg'), fmt='pandas')  # returning as a pandas DataFrame
     db.query_region(SkyCoord(209., 14., frame='icrs', unit='deg'), coordinate_table='Sources', ra_col='ra', dec_col='dec')  # specifying the name of the table with coordinate information
 
+Full String Search
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to the Identifier Search above, one can perform a case-insensitive search for
+any string against every string column in the database with :py:meth:`~astrodbkit2.astrodb.Database.search_string`.
+The output is a dictionary with keys for each table that matched results.
+This can be useful to find all results matching a particular reference regardless of table::
+
+    db.search_string('twa')  # search for any records with 'twa' anywhere in the database
+    db.search_string('Cruz18', fuzzy_search=False)  # search for strings exactly matching Cruz19 anywhere in the database
+    db.search_string('Cruz18', fuzzy_search=False, fmt='pandas')  # as above, but have each table as a pandas dataframe
+
 General Queries
 --------------------
 
