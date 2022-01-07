@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
-from sqlalchemy.types import String, Text, Unicode
+import sqlalchemy.types as sqlalchemy_types
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
 import sqlite3
@@ -540,9 +540,9 @@ class Database:
             # Gather only string-type columns
             columns = self.metadata.tables[table].columns
             col_list = [c for c in columns
-                        if isinstance(c.type, String)
-                        or isinstance(c.type, Text)
-                        or isinstance(c.type, Unicode)]
+                        if isinstance(c.type, sqlalchemy_types.String)
+                        or isinstance(c.type, sqlalchemy_types.Text)
+                        or isinstance(c.type, sqlalchemy_types.Unicode)]
 
             # Construct filters to query for each string column
             filters = []

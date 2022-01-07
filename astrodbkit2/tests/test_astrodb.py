@@ -193,6 +193,8 @@ def test_search_string(db):
     assert d['Sources']['source'] == 'FAKE'
     d = db.search_string('2mass', fuzzy_search=True)
     assert len(d) > 0
+    d = db.search_string('2mass', fuzzy_search=False)
+    assert len(d) == 0
 
 
 def test_query_region(db):
