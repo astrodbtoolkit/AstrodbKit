@@ -187,6 +187,16 @@ def test_search_object(mock_simbad, db):
         t = db.search_object('fake', table_names={'NOTABLE': ['nocolumn']})
 
 
+def test_search_string(db):
+    d = db.search_string('fake')
+    assert len(d['Sources']) > 0
+    assert d['Sources']['source'] == 'FAKE'
+    d = db.search_string('2mass', fuzzy_search=True)
+    assert len(d) > 0
+    d = db.search_string('2mass', fuzzy_search=False)
+    assert len(d) == 0
+
+
 def test_query_region(db):
     t = db.query_region(SkyCoord(0, 0, frame='icrs', unit='deg'))
     assert len(t) == 0, 'Found source around 0,0 when there should be none'

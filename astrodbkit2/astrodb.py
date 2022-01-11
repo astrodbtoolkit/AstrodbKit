@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
+import sqlalchemy.types as sqlalchemy_types
 from sqlalchemy import event, create_engine, Table
 from sqlalchemy import or_, and_
 import sqlite3
@@ -512,6 +513,60 @@ class Database:
         results = self._handle_format(temp, fmt)
 
         return results
+
+    def search_string(self, value, fmt='table', fuzzy_search=True, verbose=True):
+        """
+        Search an abitrary string across all string columns in the full database
+
+        Parameters
+        ----------
+        value : str
+            String to search for
+        fmt : str
+            Format to return results in (pandas, astropy/table, default). Default is astropy table
+        fuzzy_search : bool
+            Flag to perform partial searches on provided names (default: True)
+        verbose : bool
+            Output results to screen in addition to dictionary (default: True)
+
+        Returns
+        -------
+        Dictionary of results, with each key being the matched table names
+        """
+
+        # Loop over all tables to build the results
+        output_dict = {}
+        for table in self.metadata.tables:
+            # Gather only string-type columns
+            columns = self.metadata.tables[table].columns
+            col_list = [c for c in columns
+                        if isinstance(c.type, sqlalchemy_types.String)
+                        or isinstance(c.type, sqlalchemy_types.Text)
+                        or isinstance(c.type, sqlalchemy_types.Unicode)]
+
+            # Construct filters to query for each string column
+            filters = []
+            for c in col_list:
+                if fuzzy_search:
+                    filters += [c.ilike(f'%{value}%')]
+                else:
+                    filters += [c.ilike(f'{value}')]
+
+            # Perform the actual query
+            temp = self.query(self.metadata.tables[table]). \
+                filter(or_(*filters)). \
+                distinct(). \
+                all()
+
+            # Append results to dictionary output in specified format
+            if len(temp) > 0:
+                results = self._handle_format(temp, fmt)
+                if verbose:
+                    print(table)
+                    print(results)
+                output_dict[table] = results
+
+        return output_dict
 
     # General query methods
     @deprecated_alias(format='fmt')
