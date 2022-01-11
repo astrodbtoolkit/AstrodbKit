@@ -169,6 +169,11 @@ def test_search_object(mock_simbad, db):
     t = db.search_object('engu', fuzzy_search=False)
     assert len(t) == 0
 
+    # Test pandas conversion
+    t = db.search_object('engu', fmt='pandas')
+    assert isinstance(t, pd.DataFrame)
+    assert 'source' in t.columns  # check column names
+
     # Search but only consider the Sources.source column
     t = db.search_object('penguin', table_names={'Sources': ['source']})
     assert len(t) == 0
