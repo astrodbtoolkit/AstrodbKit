@@ -332,7 +332,7 @@ class Database:
             else:
                 results = AstropyTable(temp)
         elif fmt.lower() == 'pandas':
-            results = pd.DataFrame(temp)
+            results = pd.DataFrame(temp, columns=temp[0].keys())
         else:
             results = temp
 
