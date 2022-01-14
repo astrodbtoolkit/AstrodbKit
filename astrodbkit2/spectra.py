@@ -50,7 +50,7 @@ def load_spex_prism(filename, **kwargs):
 
         # Handle missing/incorrect units
         try:
-            flux_unit = header['YUNITS'].replace('ergs', 'erg')
+            flux_unit = header['YUNITS'].replace('ergs', 'erg ').strip()
             wave_unit = header['XUNITS'].replace('Microns', 'um')
         except (KeyError, ValueError):
             # For now, assume some default units
