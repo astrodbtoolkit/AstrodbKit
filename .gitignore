@@ -49,6 +49,7 @@ develop-eggs
 distribute-*.tar.gz
 
 # Other
+.vs
 .cache
 .tox
 .*.sw[op]
