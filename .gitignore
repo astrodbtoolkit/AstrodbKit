@@ -50,6 +50,7 @@ distribute-*.tar.gz
 
 # Other
 .vs
+.vscode
 .cache
 .tox
 .*.sw[op]
