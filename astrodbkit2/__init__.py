@@ -23,7 +23,7 @@ except ImportError:
 
 # These describe the various database tables and their links
 REFERENCE_TABLES = ['Publications', 'Telescopes', 'Instruments', 'Modes', 'Filters', 'PhotometryFilters',
-                    'Citations', 'References', 'Versions']
+                    'Citations', 'References', 'Versions', 'Parameters']
 # REFERENCE_TABLES is a list of tables that do not link to the primary table.
 # These are treated separately from the other data tables that are all assumed to be linked to the primary table.
 PRIMARY_TABLE = 'Sources'  # the primary table used for storing objects
