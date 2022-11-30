@@ -1,6 +1,8 @@
 # Functions to handle loading of spectrum objects
 
 import os
+import astropy.units as u
+from astropy.wcs import WCS, _wcs
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
@@ -75,6 +77,9 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
     Identifier for WCS1D multispec
     """
     hdu = kwargs.get('hdu', 0)
+
+    # TODO: Expand checks, this is too ambigious and matches also iraf
+
     # Check if number of axes is one and dimension of WCS is greater than one
     with read_fileobj_or_hdulist(*args, **kwargs) as hdulist:
         return (hdulist[hdu].header.get('WCSDIM', 1) > 1 and
@@ -84,12 +89,87 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
 
 
 @data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D)
-def wcs1d_multispec_loader(filename, **kwargs):
+def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
+                      hdu=0, verbose=False, **kwargs):
     """
-    Loader for multiextension spectra as wcs1d
+    Loader for multiextension spectra as wcs1d. Adapted from wcs1d_fits_loader
+
+    Parameters
+    ----------
+    file_obj : str, file-like or HDUList
+        FITS file name, object (provided from name by Astropy I/O Registry),
+        or HDUList (as resulting from astropy.io.fits.open()).
+    spectral_axis_unit : :class:`~astropy.units.Unit` or str, optional
+        Units of the spectral axis. If not given (or None), the unit will be
+        inferred from the CUNIT in the WCS. Note that if this is provided it
+        will *override* any units the CUNIT specifies.
+        The WCS CUNIT will be obtained by default from the header CUNIT1 card;
+        if missing, the loader will try to extract it from the WAT1_001 card.
+    flux_unit : :class:`~astropy.units.Unit` or str, optional
+        Units of the flux for this spectrum. If not given (or None), the unit
+        will be inferred from the BUNIT keyword in the header. Note that this
+        unit will attempt to convert from BUNIT if BUNIT is present.
+    hdu : int
+        The index of the HDU to load into this spectrum.
+    verbose : bool
+        Print extra info.
+    **kwargs
+        Extra keywords for :func:`~specutils.io.parsing_utils.read_fileobj_or_hdulist`.
+    
+    Returns
+    -------
+    :class:`~specutils.Spectrum1D`
     """
-    # TODO: look into wcs1d_fits_loader
-    return None
+
+    with read_fileobj_or_hdulist(file_obj, **kwargs) as hdulist:
+        header = hdulist[hdu].header
+        wcs = WCS(header)
+
+        # Load data, convert units if BUNIT and flux_unit is provided and not the same
+        if 'BUNIT' in header:
+            data = u.Quantity(hdulist[hdu].data, unit=header['BUNIT'])
+            if flux_unit is not None:
+                data = data.to(flux_unit)
+        else:
+            data = u.Quantity(hdulist[hdu].data, unit=flux_unit)
+
+    if spectral_axis_unit is not None:
+        wcs.wcs.cunit[0] = str(spectral_axis_unit)
+    elif wcs.wcs.cunit[0] == '' and 'WAT1_001' in header:
+        # Try to extract from IRAF-style card or use Angstrom as default.
+        wat_dict = dict((rec.split('=') for rec in header['WAT1_001'].split()))
+        unit = wat_dict.get('units', 'Angstrom')
+        if hasattr(u, unit):
+            wcs.wcs.cunit[0] = unit
+        else:  # try with unit name stripped of excess plural 's'...
+            wcs.wcs.cunit[0] = unit.rstrip('s')
+        if verbose:
+            print(f"Extracted spectral axis unit '{unit}' from 'WAT1_001'")
+    elif wcs.wcs.cunit[0] == '':
+        wcs.wcs.cunit[0] = 'Angstrom'
+
+    # Compatibility attribute for lookup_table (gwcs) WCS
+    wcs.unit = tuple(wcs.wcs.cunit)
+
+    # Identify the correct parts of the data to store
+    flux_data = data[0]
+    uncertainty = None
+    if 'NAXIS3' in header:
+        for i in range(header['NAXIS3']):
+            if 'spectrum' in header.get(f'BANDID{i+1}', ''):
+                flux_data = data[i]
+            if 'sigma' in header.get(f'BANDID{i+1}', ''):
+                uncertainty = StdDevUncertainty(data[i])
+
+    # Manually generate spectral axis
+    wcs_size = len(wcs.pixel_shape)
+    pixels = [[i] + [0]*(wcs_size-1) for i in range(wcs.pixel_shape[0])]
+    spectral_axis = [i[0] for i in wcs.all_pix2world(pixels, 0)] * wcs.wcs.cunit[0]
+
+    # Store header as metadata information
+    meta = {'header': header}
+
+    return Spectrum1D(flux=flux_data, spectral_axis=spectral_axis, uncertainty=uncertainty, meta=meta)
 
 
 def load_spectrum(filename, spectra_format=None):
