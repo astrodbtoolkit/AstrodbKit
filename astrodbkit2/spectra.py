@@ -1,11 +1,12 @@
 # Functions to handle loading of spectrum objects
 
 import os
-from specutils.io.registers import data_loader
-from specutils import Spectrum1D
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
+from specutils import Spectrum1D
+from specutils.io.registers import data_loader
+from specutils.io.parsing_utils import read_fileobj_or_hdulist
 
 
 def _identify_spex(filename):
@@ -40,7 +41,7 @@ def identify_spex_prism(origin, *args, **kwargs):
 
 
 @data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'], dtype=Spectrum1D)
-def load_spex_prism(filename, **kwargs):
+def spex_prism_loader(filename, **kwargs):
     # Open a SpeX Prism file and convert it to a Spectrum1D object
 
     with fits.open(filename, **kwargs) as hdulist:
@@ -67,6 +68,28 @@ def load_spex_prism(filename, **kwargs):
         meta = {'header': header}
 
     return Spectrum1D(flux=data, spectral_axis=wave, uncertainty=uncertainty, meta=meta)
+
+
+def identify_wcs1d_multispec(origin, *args, **kwargs):
+    """
+    Identifier for WCS1D multispec
+    """
+    hdu = kwargs.get('hdu', 0)
+    # Check if number of axes is one and dimension of WCS is greater than one
+    with read_fileobj_or_hdulist(*args, **kwargs) as hdulist:
+        return (hdulist[hdu].header.get('WCSDIM', 1) > 1 and
+                (hdulist[hdu].header['NAXIS'] > 1 or
+                 hdulist[hdu].header.get('WCSAXES', 0) > 1 ) and 
+                'WAT0_001' in hdulist[hdu].header)
+
+
+@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D)
+def wcs1d_multispec_loader(filename, **kwargs):
+    """
+    Loader for multiextension spectra as wcs1d
+    """
+    # TODO: look into wcs1d_fits_loader
+    return None
 
 
 def load_spectrum(filename, spectra_format=None):

@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 from astropy.io import fits
 from astropy.units import Unit
-from astrodbkit2.spectra import identify_spex_prism, _identify_spex, load_spectrum, load_spex_prism
+from astrodbkit2.spectra import identify_spex_prism, _identify_spex, load_spectrum, spex_prism_loader
 try:
     import mock
 except ImportError:
@@ -58,11 +58,11 @@ def test_identify_spex(mock_fits_open, good_spex_file, bad_spex_file):
 def test_load_spex_prism(mock_fits_open, good_spex_file, bad_spex_file):
     # Test good example
     mock_fits_open.return_value = good_spex_file
-    spectrum = load_spex_prism('filename')
+    spectrum = spex_prism_loader('filename')
     assert spectrum.unit == Unit('erg / (A cm2 s)')
     # Test bad example
     mock_fits_open.return_value = bad_spex_file
-    spectrum = load_spex_prism('filename')
+    spectrum = spex_prism_loader('filename')
     assert spectrum.unit == Unit('erg')
 
 
