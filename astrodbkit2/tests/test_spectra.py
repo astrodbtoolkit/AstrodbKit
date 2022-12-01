@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 from astropy.io import fits
 from astropy.units import Unit
-from astrodbkit2.spectra import identify_spex_prism, _identify_spex, load_spectrum, spex_prism_loader
+from astrodbkit2.spectra import identify_spex_prism, _identify_spex, load_spectrum, spex_prism_loader, identify_wcs1d_multispec, wcs1d_multispec_loader
 try:
     import mock
 except ImportError:
@@ -32,6 +32,25 @@ def bad_spex_file():
     hdr['INSTRUME'] = 'MISSING'
     hdr['GRAT'] = 'MISSING'
     hdr['XUNITS'] = 'UNKNOWN'
+    hdu1 = fits.PrimaryHDU(n, header=hdr)
+    return fits.HDUList([hdu1])
+
+
+@pytest.fixture(scope="module")
+def good_wcs1dmultispec():
+    n = np.empty((2141, 1, 4))
+    hdr = fits.Header()
+    hdr['WCSDIM'] = 3
+    hdr['NAXIS'] = 3
+    hdr['WAT0_001'] = 'system=equispec'
+    hdr['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
+    hdr['WAT2_001'] = 'wtype=linear'
+    hdr['BANDID1'] = 'spectrum - background fit, weights variance, clean no'               
+    hdr['BANDID2'] = 'raw - background fit, weights none, clean no'                        
+    hdr['BANDID3'] = 'background - background fit'                                         
+    hdr['BANDID4'] = 'sigma - background fit, weights variance, clean no'  
+    hdr['CTYPE1'] = 'LINEAR  '
+    hdr['BUNIT']   = 'erg/cm2/s/A'
     hdu1 = fits.PrimaryHDU(n, header=hdr)
     return fits.HDUList([hdu1])
 
@@ -64,6 +83,23 @@ def test_load_spex_prism(mock_fits_open, good_spex_file, bad_spex_file):
     mock_fits_open.return_value = bad_spex_file
     spectrum = spex_prism_loader('filename')
     assert spectrum.unit == Unit('erg')
+
+
+@mock.patch('astrodbkit2.spectra.read_fileobj_or_hdulist')
+def test_identify_wcs1d_multispec(mock_fits_open, good_wcs1dmultispec):
+    mock_fits_open.return_value = good_wcs1dmultispec
+
+    filename = 'https://s3.amazonaws.com/bdnyc/optical_spectra/U10929.fits'
+    assert identify_wcs1d_multispec('read', filename)
+
+
+@mock.patch('astrodbkit2.spectra.read_fileobj_or_hdulist')
+def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec):
+    mock_fits_open.return_value = good_wcs1dmultispec
+
+    spectrum = wcs1d_multispec_loader('filename')
+    assert spectrum.unit == Unit('erg / (A cm2 s)')
+    assert spectrum.wavelength.unit == Unit('Angstrom')
 
 
 @mock.patch('astrodbkit2.spectra.Spectrum1D.read')

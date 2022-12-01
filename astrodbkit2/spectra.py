@@ -78,17 +78,16 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
     """
     hdu = kwargs.get('hdu', 0)
 
-    # TODO: Expand checks, this is too ambigious and matches also iraf
-
     # Check if number of axes is one and dimension of WCS is greater than one
     with read_fileobj_or_hdulist(*args, **kwargs) as hdulist:
         return (hdulist[hdu].header.get('WCSDIM', 1) > 1 and
-                (hdulist[hdu].header['NAXIS'] > 1 or
-                 hdulist[hdu].header.get('WCSAXES', 0) > 1 ) and 
-                'WAT0_001' in hdulist[hdu].header)
+                hdulist[hdu].header['NAXIS'] > 1  and 
+                'WAT0_001' in hdulist[hdu].header and
+                hdulist[hdu].header.get('WCSDIM', 1) == hdulist[hdu].header['NAXIS'] and
+                'LINEAR' in hdulist[hdu].header.get('CTYPE1', ''))
 
 
-@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D)
+@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D, priority=10)
 def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
                       hdu=0, verbose=False, **kwargs):
     """
