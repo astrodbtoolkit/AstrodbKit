@@ -88,7 +88,7 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
 
 
 @data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D, priority=10)
-def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
+def wcs1d_multispec_loader(file_obj, flux_unit=None,
                       hdu=0, verbose=False, **kwargs):
     """
     Loader for multiextension spectra as wcs1d. Adapted from wcs1d_fits_loader
@@ -98,12 +98,6 @@ def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
     file_obj : str, file-like or HDUList
         FITS file name, object (provided from name by Astropy I/O Registry),
         or HDUList (as resulting from astropy.io.fits.open()).
-    spectral_axis_unit : :class:`~astropy.units.Unit` or str, optional
-        Units of the spectral axis. If not given (or None), the unit will be
-        inferred from the CUNIT in the WCS. Note that if this is provided it
-        will *override* any units the CUNIT specifies.
-        The WCS CUNIT will be obtained by default from the header CUNIT1 card;
-        if missing, the loader will try to extract it from the WAT1_001 card.
     flux_unit : :class:`~astropy.units.Unit` or str, optional
         Units of the flux for this spectrum. If not given (or None), the unit
         will be inferred from the BUNIT keyword in the header. Note that this
@@ -134,9 +128,7 @@ def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
         else:
             data = u.Quantity(hdulist[hdu].data, unit=flux_unit)
 
-    if spectral_axis_unit is not None:
-        wcs.wcs.cunit[0] = str(spectral_axis_unit)
-    elif wcs.wcs.cunit[0] == '' and 'WAT1_001' in header:
+    if wcs.wcs.cunit[0] == '' and 'WAT1_001' in header:
         # Try to extract from IRAF-style card or use Angstrom as default.
         wat_dict = dict((rec.split('=') for rec in header['WAT1_001'].split()))
         unit = wat_dict.get('units', 'Angstrom')

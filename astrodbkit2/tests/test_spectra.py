@@ -54,6 +54,24 @@ def good_wcs1dmultispec():
     hdu1 = fits.PrimaryHDU(n, header=hdr)
     return fits.HDUList([hdu1])
 
+@pytest.fixture(scope="module")
+def alt_wcs1dmultispec():
+    n = np.empty((2141, 1, 4))
+    hdr = fits.Header()
+    hdr['WCSDIM'] = 1
+    hdr['NAXIS'] = 1
+    hdr['WAT0_001'] = 'system=equispec'
+    hdr['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
+    hdr['WAT2_001'] = 'wtype=linear'
+    hdr['BANDID1'] = 'spectrum - background fit, weights variance, clean no'               
+    hdr['BANDID2'] = 'raw - background fit, weights none, clean no'                        
+    hdr['BANDID3'] = 'background - background fit'                                         
+    hdr['BANDID4'] = 'sigma - background fit, weights variance, clean no'  
+    hdr['CTYPE1'] = 'LINEAR  '
+    hdr['BUNIT']   = 'erg/cm2/s/A'
+    hdu1 = fits.PrimaryHDU(n, header=hdr)
+    return fits.HDUList([hdu1])
+
 
 @mock.patch('astrodbkit2.spectra.fits.open')
 def test_identify_spex_prism(mock_fits_open, good_spex_file):
@@ -94,9 +112,19 @@ def test_identify_wcs1d_multispec(mock_fits_open, good_wcs1dmultispec):
 
 
 @mock.patch('astrodbkit2.spectra.read_fileobj_or_hdulist')
-def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec):
+def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec, alt_wcs1dmultispec):
     mock_fits_open.return_value = good_wcs1dmultispec
 
+    spectrum = wcs1d_multispec_loader('filename')
+    assert spectrum.unit == Unit('erg / (Angstrom cm2 s)')
+    assert spectrum.wavelength.unit == Unit('Angstrom')
+
+    # Check flux_unit is converted correctly
+    spectrum = wcs1d_multispec_loader('filename', flux_unit=Unit('erg / (um cm2 s)'))
+    assert spectrum.unit == Unit('erg / (um cm2 s)')
+
+    # NAXIS=1 example
+    mock_fits_open.return_value = alt_wcs1dmultispec
     spectrum = wcs1d_multispec_loader('filename')
     assert spectrum.unit == Unit('erg / (Angstrom cm2 s)')
     assert spectrum.wavelength.unit == Unit('Angstrom')
