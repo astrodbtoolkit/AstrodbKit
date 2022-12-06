@@ -153,7 +153,10 @@ def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
     wcs.unit = tuple(wcs.wcs.cunit)
 
     # Identify the correct parts of the data to store
-    flux_data = data[0]
+    if len(data.shape) > 1:
+        flux_data = data[0]
+    else:
+        flux_data = data
     uncertainty = None
     if 'NAXIS3' in header:
         for i in range(header['NAXIS3']):
@@ -163,8 +166,7 @@ def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
                 uncertainty = StdDevUncertainty(data[i])
 
     # Manually generate spectral axis
-    wcs_size = len(wcs.pixel_shape)
-    pixels = [[i] + [0]*(wcs_size-1) for i in range(wcs.pixel_shape[0])]
+    pixels = [[i] + [0]*(wcs.naxis-1) for i in range(wcs.pixel_shape[0])]
     spectral_axis = [i[0] for i in wcs.all_pix2world(pixels, 0)] * wcs.wcs.cunit[0]
 
     # Store header as metadata information
