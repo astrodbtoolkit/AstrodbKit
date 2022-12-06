@@ -56,7 +56,7 @@ def good_wcs1dmultispec():
 
 @pytest.fixture(scope="module")
 def alt_wcs1dmultispec():
-    n = np.empty((2141, 1, 4))
+    n = np.empty((2141,))
     hdr = fits.Header()
     hdr['WCSDIM'] = 1
     hdr['NAXIS'] = 1
