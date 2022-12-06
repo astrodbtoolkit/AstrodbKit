@@ -127,6 +127,8 @@ def wcs1d_multispec_loader(file_obj, spectral_axis_unit=None, flux_unit=None,
         # Load data, convert units if BUNIT and flux_unit is provided and not the same
         if 'BUNIT' in header:
             data = u.Quantity(hdulist[hdu].data, unit=header['BUNIT'])
+            if u.A in data.unit.bases:
+                data = data * u.A/u.AA # convert ampere to Angroms
             if flux_unit is not None:
                 data = data.to(flux_unit)
         else:

@@ -98,7 +98,7 @@ def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec):
     mock_fits_open.return_value = good_wcs1dmultispec
 
     spectrum = wcs1d_multispec_loader('filename')
-    assert spectrum.unit == Unit('erg / (A cm2 s)')
+    assert spectrum.unit == Unit('erg / (Angstrom cm2 s)')
     assert spectrum.wavelength.unit == Unit('Angstrom')
 
 
