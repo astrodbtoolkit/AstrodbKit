@@ -1,8 +1,9 @@
-# Functions to handle loading of spectrum objects
+"""Functions to handle loading of spectrum objects"""
 
 import os
+import numpy as np
 import astropy.units as u
-from astropy.wcs import WCS, _wcs
+from astropy.wcs import WCS
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
@@ -10,6 +11,7 @@ from specutils import Spectrum1D
 from specutils.io.registers import data_loader
 from specutils.io.parsing_utils import read_fileobj_or_hdulist
 
+# pylint: disable=no-member, unused-argument
 
 def _identify_spex(filename):
     """
@@ -19,7 +21,7 @@ def _identify_spex(filename):
         with fits.open(filename, memmap=False) as hdulist:
             return 'spex' in hdulist[0].header['INSTRUME'].lower() and \
                    'irtf' in hdulist[0].header['TELESCOP'].lower()
-    except Exception:
+    except Exception:  # pylint: disable=broad-except,
         return False
 
 
@@ -44,7 +46,7 @@ def identify_spex_prism(origin, *args, **kwargs):
 
 @data_loader("Spex Prism", identifier=identify_spex_prism, extensions=['fits'], dtype=Spectrum1D)
 def spex_prism_loader(filename, **kwargs):
-    # Open a SpeX Prism file and convert it to a Spectrum1D object
+    """Open a SpeX Prism file and convert it to a Spectrum1D object"""
 
     with fits.open(filename, **kwargs) as hdulist:
         header = hdulist[0].header
@@ -81,13 +83,14 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
     # Check if number of axes is one and dimension of WCS is greater than one
     with read_fileobj_or_hdulist(*args, **kwargs) as hdulist:
         return (hdulist[hdu].header.get('WCSDIM', 1) > 1 and
-                hdulist[hdu].header['NAXIS'] > 1  and 
+                hdulist[hdu].header['NAXIS'] > 1  and
                 'WAT0_001' in hdulist[hdu].header and
                 hdulist[hdu].header.get('WCSDIM', 1) == hdulist[hdu].header['NAXIS'] and
                 'LINEAR' in hdulist[hdu].header.get('CTYPE1', ''))
 
 
-@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'], dtype=Spectrum1D, priority=10)
+@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=['fits'],
+             dtype=Spectrum1D, priority=10)
 def wcs1d_multispec_loader(file_obj, flux_unit=None,
                       hdu=0, verbose=False, **kwargs):
     """
@@ -108,7 +111,7 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None,
         Print extra info.
     **kwargs
         Extra keywords for :func:`~specutils.io.parsing_utils.read_fileobj_or_hdulist`.
-    
+
     Returns
     -------
     :class:`~specutils.Spectrum1D`
@@ -155,7 +158,17 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None,
             if 'spectrum' in header.get(f'BANDID{i+1}', ''):
                 flux_data = data[i]
             if 'sigma' in header.get(f'BANDID{i+1}', ''):
-                uncertainty = StdDevUncertainty(data[i])
+                uncertainty = data[i]
+
+    # Reshape arrays if needed
+    if len(flux_data) == 1 and len(flux_data.shape) > 1:
+        flux_data = np.reshape(flux_data, -1)
+        if uncertainty is not None:
+            uncertainty = np.reshape(uncertainty, -1)
+
+    # Convert uncertainty to StdDevUncertainty array
+    if uncertainty is not None:
+        uncertainty = StdDevUncertainty(uncertainty)
 
     # Manually generate spectral axis
     pixels = [[i] + [0]*(wcs.naxis-1) for i in range(wcs.pixel_shape[0])]
@@ -164,11 +177,12 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None,
     # Store header as metadata information
     meta = {'header': header}
 
-    return Spectrum1D(flux=flux_data, spectral_axis=spectral_axis, uncertainty=uncertainty, meta=meta)
+    return Spectrum1D(flux=flux_data, spectral_axis=spectral_axis, uncertainty=uncertainty,
+                      meta=meta)
 
 
 def load_spectrum(filename, spectra_format=None):
-    # Attempt to load the filename as a spectrum object
+    """Attempt to load the filename as a spectrum object"""
 
     # Convert filename if using environment variables
     if filename.startswith('$'):
@@ -186,7 +200,7 @@ def load_spectrum(filename, spectra_format=None):
             spec1d = Spectrum1D.read(filename, format=spectra_format)
         else:
             spec1d = Spectrum1D.read(filename)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except, invalid-name
         print(f'Error loading {filename}: {e}')
         spec1d = filename
 
