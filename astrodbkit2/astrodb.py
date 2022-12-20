@@ -235,7 +235,7 @@ def copy_database_schema(source_connection_string, destination_connection_string
 
         # Copy schema and create newTable from oldTable
         for column in src_metadata.tables[table.name].columns:
-            dest_table.append_column(column.copy())
+            dest_table.append_column(column._copy())
         dest_table.create()
 
         # Copy data, row by row
