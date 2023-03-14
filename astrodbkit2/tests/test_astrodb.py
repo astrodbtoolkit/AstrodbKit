@@ -5,6 +5,7 @@ import json
 import pytest
 import io
 import pandas as pd
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
@@ -51,6 +52,8 @@ def db():
 
 def test_add_data(db):
     # Load example data to the database
+
+    # Data dictionaries to be added
     publications_data = [{'name': 'Schm10',
                           'bibcode': '2010AJ....139.1808S',
                           'doi': '10.1088/0004-6256/139/5/1808',
@@ -58,30 +61,18 @@ def test_add_data(db):
                          {'name': 'Cutr12',
                           'bibcode': '2012yCat.2311....0C',
                           'doi': None,
-                          'description': 'WISE All-Sky Data Release'}]
-    db.Publications.insert().execute(publications_data)
-
-    # Add telescope
-    db.Telescopes.insert().execute([{'name': 'WISE'}])
-
-    # Add source
+                          'description': 'WISE All-Sky Data Release'}]       
     sources_data = [{'ra': 209.301675, 'dec': 14.477722,
                      'source': '2MASS J13571237+1428398',
                      'reference': 'Schm10',
                      'shortname': '1357+1428'},
                     {'ra': 123, 'dec': -32, 'source': 'FAKE', 'reference': 'Schm10', 'shortname': 'FAKE'}]
-    db.Sources.insert().execute(sources_data)
-
-    # Additional names
     names_data = [{'source': '2MASS J13571237+1428398',
                    'other_name': 'SDSS J135712.40+142839.8'},
                   {'source': '2MASS J13571237+1428398',
                    'other_name': '2MASS J13571237+1428398'},
                   {'source': 'FAKE', 'other_name': 'Penguin'}
                   ]
-    db.Names.insert().execute(names_data)
-
-    # Add Photometry
     phot_data = [{'source': '2MASS J13571237+1428398',
                   'band': 'WISE_W1',
                   'magnitude': 13.348,
@@ -96,9 +87,6 @@ def test_add_data(db):
                   'telescope': 'WISE',
                   'reference': 'Cutr12'
                   }]
-    db.Photometry.insert().execute(phot_data)
-
-    # Add SpectralType
     spt_data = [{'source': '2MASS J13571237+1428398',
                  'spectral_type': 13,
                  'spectral_type_error': None,
@@ -106,17 +94,33 @@ def test_add_data(db):
                  'best': 1,
                  'reference': 'Cutr12'
                  }]
+
+    with db.engine.begin() as conn:
+        conn.execute(db.Publications.insert().values(publications_data))
+        conn.execute(db.Telescopes.insert().values([{'name': 'WISE'}]))
+        conn.execute(db.Sources.insert().values(sources_data))
+        conn.execute(db.Names.insert().values(names_data))
+        conn.execute(db.Photometry.insert().values(phot_data))
+
+    # Add SpectralType
+    
     # First try with an incorrect regime value
     with pytest.raises(IntegrityError):
-        db.SpectralTypes.insert().execute(spt_data)
+        with db.engine.begin() as conn:
+            conn.execute(db.SpectralTypes.insert().values(spt_data))
+
     # Then with an accpeted regime value
     spt_data[0]['regime'] = 'infrared'
-    db.SpectralTypes.insert().execute(spt_data)
+    with db.engine.begin() as conn:
+        conn.execute(db.SpectralTypes.insert().values(spt_data))
 
     # Adding source with no ra/dec to test cone search
     sources_data = [{'source': 'Third star',
                      'reference': 'Schm10'}]
-    db.Sources.insert().execute(sources_data)
+    with db.engine.connect() as conn:
+        conn.execute(db.Sources.insert().values(sources_data))
+        conn.commit()
+
 
 
 def test_add_table_data(db):
@@ -133,19 +137,24 @@ Not in DB,WISE_W4,0,WISE,Cutr12
     string_data = """source,band,magnitude,telescope,reference,extra column
 2MASS J13571237+1428398,WISE_W3,12.48,WISE,Cutr12,blah blah
 """
+    # TODO: Need to debug how to deal with 'extra column' since it's not part of the schema
 
     # Load as mocked CSV file
     file = io.StringIO(string_data)
     db.add_table_data(file, 'Photometry')
 
     # Delete and re-add as pandas DataFrame
-    db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3').execute()
+    with db.engine.begin() as conn:
+        conn.execute(db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3'))
+
     file = io.StringIO(string_data)
     data = pd.read_csv(file)
     db.add_table_data(data, 'Photometry', fmt='pandas')
 
     # Delete and re-add as astropy Table
-    db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3').execute()
+    with db.engine.begin() as conn:
+        conn.execute(db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W3'))
+
     data = ascii.read(string_data, format='csv')
     db.add_table_data(data, 'Photometry', fmt='astropy')
 
@@ -364,8 +373,12 @@ def test_load_database(db, db_dir):
     # Test loading database from JSON files
 
     # First clear some of the tables
-    db.Publications.delete().execute()
-    db.Sources.delete().execute()
+    with db.engine.connect() as conn:
+        conn.execute(db.Publications.delete())
+        conn.commit()
+        conn.execute(db.Sources.delete())
+        conn.commit()
+
     assert db.query(db.Publications).count() == 0
     assert db.query(db.Sources).count() == 0
 

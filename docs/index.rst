@@ -328,7 +328,9 @@ The simplest way to add data to an existing database is to construct a list of d
                      'source': '2MASS J13571237+1428398',
                      'reference': 'Schm10',
                      'shortname': '1357+1428'}]
-    db.Sources.insert().execute(sources_data)
+    with db.engine.connect() as conn:
+        conn.execute(db.Sources.insert().values(sources_data))
+        conn.commit()  # sqlalchemy 2.0 does not autocommit
 
 As a convenience method, users can use the :py:meth:`~astrodbkit2.astrodb.Database.add_table_data` method
 to load user-supplied tables into database tables. If not loading the primary table, the code will first check for
@@ -342,20 +344,23 @@ For example::
 Updating Data
 -------------
 
-Similarly, rows can be updated with standard SQLAlchemy calls.
+Similarly, rows can be updated with standard SQLAlchemy calls. 
+For simplicity, here we use SQLAlchemy's "Begin Once" style which commits/rollbacks the transaction as needed; 
+see https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#begin-once.
 This example sets the shortname for a row that matches a Source with source name of 2MASS J13571237+1428398::
 
-    stmt = db.Sources.update()\
-             .where(db.Sources.c.source == '2MASS J13571237+1428398')\
-             .values(shortname='1357+1428')
-    db.engine.execute(stmt)
+    with db.engine.begin() as conn:
+        conn.execute(db.Sources.update()\
+                .where(db.Sources.c.source == '2MASS J13571237+1428398')\
+                .values(shortname='1357+1428'))
 
 Deleting Data
 -------------
 
 Deleting rows can also be done. Here's an example that deletes all photometry with band name of WISE_W1::
 
-    db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W1').execute()
+    with db.engine.begin() as conn:
+        conn.execute(db.Photometry.delete().where(db.Photometry.c.band == 'WISE_W1'))
 
 Saving the Database
 ===================

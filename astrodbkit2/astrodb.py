@@ -4,19 +4,18 @@ __all__ = ['__version__', 'Database', 'or_', 'and_', 'create_database']
 
 import os
 import json
+import sqlite3
 import numpy as np
 import pandas as pd
 from astropy.table import Table as AstropyTable
 from astropy.units.quantity import Quantity
 from astropy.coordinates import SkyCoord
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.orm.query import Query
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import Engine
 import sqlalchemy.types as sqlalchemy_types
 from sqlalchemy import event, create_engine, Table
-from sqlalchemy import or_, and_
-import sqlite3
+from sqlalchemy import or_, and_, text
 from tqdm import tqdm
 from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
 from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
@@ -27,8 +26,11 @@ try:
 except ImportError:
     __version__ = ''
 
+# pylint: disable=dangerous-default-value, too-many-arguments, trailing-whitespace
+
 # For SQLAlchemy ORM Declarative mapping
-# User created schema should import and use astrodb.Base so that create_database can properly handle them
+# User created schema should import and use astrodb.Base so that 
+# create_database can properly handle them
 Base = declarative_base()
 
 
@@ -38,7 +40,7 @@ class AstrodbQuery(Query):
     def _make_astropy(self):
         temp = self.all()
         if len(temp) > 0:
-            t = AstropyTable(rows=temp, names=temp[0].keys())
+            t = AstropyTable(rows=temp, names=temp[0]._fields)
         else:
             t = AstropyTable(temp)
         return t
@@ -195,7 +197,7 @@ def create_database(connection_string, drop_tables=False):
     session, base, engine = load_connection(connection_string, base=Base)
     if drop_tables:
         base.metadata.drop_all()
-    base.metadata.create_all()  # this explicitly creates the database
+    base.metadata.create_all(engine)  # this explicitly creates the database
     return session, base, engine
 
 
@@ -236,13 +238,13 @@ def copy_database_schema(source_connection_string, destination_connection_string
         # Copy schema and create newTable from oldTable
         for column in src_metadata.tables[table.name].columns:
             dest_table.append_column(column._copy())
-        dest_table.create()
+        dest_table.create(bind=dest_engine)
 
         # Copy data, row by row
         if copy_data:
             table_data = src_session.query(src_metadata.tables[table.name]).all()
             for row in table_data:
-                dest_session.execute(dest_table.insert(row))
+                dest_session.execute(dest_table.insert().values(row))
             dest_session.commit()
 
     # Explicitly close sessions/engines
@@ -300,7 +302,8 @@ class Database:
 
         # Prep the tables
         self.metadata = self.base.metadata
-        self.metadata.reflect(bind=self.engine)
+        with self.engine.connect() as conn:
+            self.metadata.reflect(conn)
 
         self._reference_tables = reference_tables
         self._primary_table = primary_table
@@ -328,12 +331,12 @@ class Database:
         # Internal method to handle SQLAlchemy output and format it
         if fmt.lower() in ('astropy', 'table'):
             if len(temp) > 0:
-                results = AstropyTable(rows=temp, names=temp[0].keys())
+                results = AstropyTable(rows=temp, names=temp[0]._fields)
             else:
                 results = AstropyTable(temp)
         elif fmt.lower() == 'pandas':
             if len(temp) > 0:
-                results = pd.DataFrame(temp, columns=temp[0].keys())
+                results = pd.DataFrame(temp, columns=temp[0]._fields)
             else:
                 results = pd.DataFrame(temp)
         else:
@@ -589,7 +592,8 @@ class Database:
         List of SQLAlchemy results
         """
 
-        temp = self.engine.execute(query).fetchall()
+        with self.engine.connect() as conn:
+            temp = conn.execute(text(query)).fetchall()
 
         return self._handle_format(temp, fmt)
 
@@ -795,8 +799,13 @@ class Database:
         # Convert format for SQLAlchemy
         data = [row.to_dict() for _, row in df.iterrows()]
 
+        # Remove unused columns
+        column_names = self.metadata.tables[table].columns.keys()
+        fixed_data = [{k: v for k, v in d.items() if k in (d.keys() & column_names)} for d in data]
+
         # Load into specified table
-        self.metadata.tables[table].insert().execute(data)
+        with self.engine.begin() as conn:
+            conn.execute(self.metadata.tables[table].insert().values(fixed_data))
 
     def load_table(self, table, directory, verbose=False):
         """
@@ -816,7 +825,8 @@ class Database:
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 data = json.load(f)
-                self.metadata.tables[table].insert().execute(data)
+                with self.engine.begin() as conn:
+                    conn.execute(self.metadata.tables[table].insert().values(data))
         else:
             if verbose: print(f'{table}.json not found.')
 
@@ -836,16 +846,17 @@ class Database:
         # Loop through the dictionary, adding data to the database.
         # Ensure that Sources is added first
         source = data[self._primary_table][0][self._primary_table_key]
-        self.metadata.tables[self._primary_table].insert().execute(data[self._primary_table])
-        for key, value in data.items():
-            if key == self._primary_table:
-                continue
+        with self.engine.begin() as conn:
+            conn.execute(self.metadata.tables[self._primary_table].insert().values(data[self._primary_table]))
+            for key, value in data.items():
+                if key == self._primary_table:
+                    continue
 
-            # Loop over multiple values (eg, Photometry)
-            for v in value:
-                temp_dict = v
-                temp_dict[self._foreign_key] = source
-                self.metadata.tables[key].insert().execute(temp_dict)
+                # Loop over multiple values (eg, Photometry)
+                for v in value:
+                    temp_dict = v
+                    temp_dict[self._foreign_key] = source
+                    conn.execute(self.metadata.tables[key].insert().values(temp_dict))
 
     def load_database(self, directory, verbose=False):
         """
@@ -864,7 +875,8 @@ class Database:
         # reversed(sorted_tables) can help ensure that foreign key dependencies are taken care of first
         for table in reversed(self.metadata.sorted_tables):
             if verbose: print(f'Deleting {table.name} table')
-            self.metadata.tables[table.name].delete().execute()
+            with self.engine.begin() as conn:
+                conn.execute(self.metadata.tables[table.name].delete())
 
         # Load reference tables first
         for table in self._reference_tables:
