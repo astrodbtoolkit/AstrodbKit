@@ -340,8 +340,9 @@ def test_inventory(db):
 
 
 def test_views(db):
-    # Test a database view created manually
+    # Test database views
 
+    # Create one manually
     PhotView = view(
         "PhotView",
         db.metadata,
@@ -353,7 +354,6 @@ def test_views(db):
             db.Photometry.c.magnitude.label("value"),
         ).select_from(db.Sources).join(db.Photometry, db.Sources.c.source == db.Photometry.c.source)
         )
-    
     # Explicitly create
     with db.engine.begin() as conn:
         db.metadata.create_all(conn)
@@ -363,8 +363,15 @@ def test_views(db):
     print(t)
     assert len(t) == 3 # 3 Photometry values for the single source
 
+    # Query one created in schema file
+    t = db.query(SampleView).table()
+    print(t)
+    assert len(t) == 1
+
     # Confirm that views are not used in inventory
     assert 'PhotView' not in db.inventory('2MASS J13571237+1428398').keys()
+    assert 'SampleView' not in db.inventory('2MASS J13571237+1428398').keys()
+
 
 def test_save_reference_table(db, db_dir):
     # Test saving a reference table
