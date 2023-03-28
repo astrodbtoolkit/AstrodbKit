@@ -368,6 +368,16 @@ def test_views(db):
     print(t)
     assert len(t) == 1
 
+    # Test views are listed when inspected
+    insp = sa.inspect(db.engine)
+    view_list = insp.get_view_names()
+    assert 'PhotView' in view_list and 'SampleView' in view_list
+
+    # Reflect a view and query it
+    ViewCopy = sa.Table('SampleView', sa.MetaData())  
+    insp.reflect_table(ViewCopy, include_columns=None)
+    assert db.query(ViewCopy).count() == 1
+
     # Confirm that views are not used in inventory
     assert 'PhotView' not in db.inventory('2MASS J13571237+1428398').keys()
     assert 'SampleView' not in db.inventory('2MASS J13571237+1428398').keys()
