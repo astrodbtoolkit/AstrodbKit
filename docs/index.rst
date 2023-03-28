@@ -425,6 +425,7 @@ Reference/API
 
    astrodb.rst
    utils.rst
+   spectra.rst
 
 Indices and tables
 
