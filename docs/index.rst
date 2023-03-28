@@ -315,7 +315,7 @@ Working With Views
 
 If your database contains views, they will not be included in the inventory methods or in the output JSON files. 
 However, you can still work with and query data in them. 
-The best way to define them is in the schema file, for example, with something like:
+The best way to define them is in the schema file, for example, with something like::
 
     SampleView = view(
         "SampleView",
@@ -328,7 +328,7 @@ The best way to define them is in the schema file, for example, with something l
         ).select_from(Sources).join(SpectralTypes, Sources.source == SpectralTypes.source)
         )
 
-When created, the database will contain these views and users can reflect them to access them: 
+When created, the database will contain these views and users can reflect them to access them::
     
     import sqlalchemy as sa
 
