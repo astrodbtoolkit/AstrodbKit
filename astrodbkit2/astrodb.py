@@ -108,7 +108,7 @@ class AstrodbQuery(Query):
 
         return df
 
-    def spectra(self, spectra=['spectrum'], fmt='astropy', **kwargs):
+    def spectra(self, spectra=['spectrum', 'access_url'], fmt='astropy', **kwargs):
         """
         Convenience method fo that uses default column name for spectra conversion
 
