@@ -5,13 +5,14 @@ import json
 import pytest
 import io
 import pandas as pd
-from sqlalchemy import select, func
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
 from astropy.units.quantity import Quantity
 from astropy.io import ascii
 from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
+from astrodbkit2.views import view
 from astrodbkit2.schema_example import *
 try:
     import mock
@@ -336,6 +337,50 @@ def test_inventory(db):
                  }
 
     assert db.inventory('2MASS J13571237+1428398') == test_dict
+
+
+def test_views(db):
+    # Test database views
+
+    # Create one manually
+    PhotView = view(
+        "PhotView",
+        db.metadata,
+        sa.select(
+            db.Sources.c.source.label("source"),
+            db.Sources.c.ra.label("s_ra"),
+            db.Sources.c.dec.label("s_dec"),
+            db.Photometry.c.band.label("band"),
+            db.Photometry.c.magnitude.label("value"),
+        ).select_from(db.Sources).join(db.Photometry, db.Sources.c.source == db.Photometry.c.source)
+        )
+    # Explicitly create
+    with db.engine.begin() as conn:
+        db.metadata.create_all(conn)
+
+    # Query the view
+    t = db.query(PhotView).table()
+    print(t)
+    assert len(t) == 3 # 3 Photometry values for the single source
+
+    # Query one created in schema file
+    t = db.query(SampleView).table()
+    print(t)
+    assert len(t) == 1
+
+    # Test views are listed when inspected
+    insp = sa.inspect(db.engine)
+    view_list = insp.get_view_names()
+    assert 'PhotView' in view_list and 'SampleView' in view_list
+
+    # Reflect a view and query it
+    ViewCopy = sa.Table('SampleView', sa.MetaData())  
+    insp.reflect_table(ViewCopy, include_columns=None)
+    assert db.query(ViewCopy).count() == 1
+
+    # Confirm that views are not used in inventory
+    assert 'PhotView' not in db.inventory('2MASS J13571237+1428398').keys()
+    assert 'SampleView' not in db.inventory('2MASS J13571237+1428398').keys()
 
 
 def test_save_reference_table(db, db_dir):

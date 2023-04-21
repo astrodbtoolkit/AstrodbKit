@@ -1,8 +1,10 @@
 # Example schema for part of the SIMPLE database
 
+import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, BigInteger, Enum, Date, DateTime
 import enum
 from astrodbkit2.astrodb import Base
+from astrodbkit2.views import view
 
 
 # -------------------------------------------------------------------------------------------------------------------
@@ -82,3 +84,17 @@ class SpectralTypes(Base):
     best = Column(Boolean)  # flag for indicating if this is the best measurement or not
     comments = Column(String(1000))
     reference = Column(String(30), ForeignKey('Publications.name', ondelete='cascade'), primary_key=True)
+
+
+# -------------------------------------------------------------------------------------------------------------------
+# Views
+SampleView = view(
+        "SampleView",
+        Base.metadata,
+        sa.select(
+            Sources.source.label("source"),
+            Sources.ra.label("s_ra"),
+            Sources.dec.label("s_dec"),
+            SpectralTypes.spectral_type.label("spectral_type"),
+        ).select_from(Sources).join(SpectralTypes, Sources.source == SpectralTypes.source)
+        )

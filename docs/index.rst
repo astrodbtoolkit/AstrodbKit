@@ -310,6 +310,42 @@ for example `$ASTRODB_SPECTRA/infrared/myfile.fits`.
 **AstrodbKit2** would examine the environment variable `$ASTRODB_SPECTRA` and use that as
 part of the absolute path to the file.
 
+Working With Views
+------------------
+
+If your database contains views, they will not be included in the inventory methods or in the output JSON files. 
+However, you can still work with and query data in them. 
+The best way to define them is in the schema file, for example, with something like::
+
+    SampleView = view(
+        "SampleView",
+        Base.metadata,
+        sa.select(
+            Sources.source.label("source"),
+            Sources.ra.label("s_ra"),
+            Sources.dec.label("s_dec"),
+            SpectralTypes.spectral_type.label("spectral_type"),
+        ).select_from(Sources).join(SpectralTypes, Sources.source == SpectralTypes.source)
+        )
+
+When created, the database will contain these views and users can reflect them to access them::
+    
+    import sqlalchemy as sa
+
+    # Inspect the database to get a list of available views
+    insp = sa.inspect(db.engine)
+    print(insp.get_view_names())
+
+    # Reflect a view and query it
+    SampleView = sa.Table('SampleView', sa.MetaData())  
+    insp.reflect_table(SampleView, include_columns=None)
+    db.query(SampleView).table()
+
+It is important that `sa.MetaData()` be used in the `sa.Table()` call as you don't want to modify 
+the metadata of the actual database. 
+If you don't do this and instead use `db.metadata`, you may end up with errors in other parts of AstrodbKit2 
+functionality as the view will be treated as a physical table.
+
 Modifying Data
 ==============
 
