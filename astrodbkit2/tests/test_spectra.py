@@ -13,7 +13,8 @@ except ImportError:
 
 @pytest.fixture(scope="module")
 def good_spex_file():
-    n = np.empty((564, 3))
+    fake_data = np.arange(1, 10, 1)
+    n = np.array([fake_data, fake_data, fake_data])
     hdr = fits.Header()
     hdr['TELESCOP'] = 'NASA IRTF'
     hdr['INSTRUME'] = 'SPeX, IRTF Spectrograph'
@@ -26,7 +27,8 @@ def good_spex_file():
 
 @pytest.fixture(scope="module")
 def bad_spex_file():
-    n = np.empty((564, 3))
+    fake_data = np.arange(1, 10, 1)
+    n = np.array([fake_data, fake_data, fake_data])
     hdr = fits.Header()
     hdr['TELESCOP'] = 'MISSING'
     hdr['INSTRUME'] = 'MISSING'
