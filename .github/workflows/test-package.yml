@@ -38,9 +38,10 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov --cov-config=setup.cfg --cov-report=term --cov-report=xml:coverage.xml
-    - name: Post coverage report
-      run: |
-        codecov
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     - name: Build docs
       run: |
         cd docs
