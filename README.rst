@@ -8,8 +8,8 @@ Astronomical database handler code
 .. image:: https://github.com/astrodbtoolkit/AstrodbKit2/workflows/Test%20Astrodbkit2/badge.svg?branch=main
     :target: https://github.com/astrodbtoolkit/AstrodbKit2/actions
 
-.. image:: https://codecov.io/gh/dr-rodriguez/AstrodbKit2/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/dr-rodriguez/AstrodbKit2
+.. image:: https://codecov.io/gh/astrodbtoolkit/AstrodbKit2/graph/badge.svg?token=LMKVN65D82 
+    :target: https://codecov.io/gh/astrodbtoolkit/AstrodbKit2
 
 AstrodbKit2 is an astronomical database handler code built on top of SQLAlchemy.
 This is built to work with the `SIMPLE database <https://github.com/SIMPLE-AstroDB/SIMPLE-db>`_, though
