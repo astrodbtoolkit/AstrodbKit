@@ -203,5 +203,6 @@ def load_spectrum(filename, spectra_format=None):
     except Exception as e:  # pylint: disable=broad-except, invalid-name
         print(f'Error loading {filename}: {e}')
         spec1d = filename
+        raise Exception(e) 
 
     return spec1d
