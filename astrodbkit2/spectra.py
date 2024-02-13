@@ -181,8 +181,21 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None,
                       meta=meta)
 
 
-def load_spectrum(filename, spectra_format=None):
-    """Attempt to load the filename as a spectrum object"""
+def load_spectrum(filename: str,
+                  spectra_format: str=None,
+                  raise_error: bool=False):
+    """Attempt to load the filename as a spectrum object
+    
+    Parameters
+    ----------
+    filename
+        Name of the file to read
+    spectra_format
+        Optional file format, passed to Spectrum1D.read. 
+        In its absense Spectrum1D.read will attempt to determine the format.
+    raise_error
+        Boolean to control if a failure to read the spectrum should raise an error.
+    """
 
     # Convert filename if using environment variables
     if filename.startswith('$'):
@@ -201,7 +214,13 @@ def load_spectrum(filename, spectra_format=None):
         else:
             spec1d = Spectrum1D.read(filename)
     except Exception as e:  # pylint: disable=broad-except, invalid-name
-        print(f'Error loading {filename}: {e}')
-        spec1d = filename
+        msg = f'Error loading {filename}: {e}'
+
+        # Control whether an error should be explicitly raised if failing to read
+        if raise_error:
+            raise TypeError(msg) from e
+        else:
+            print(msg)
+            spec1d = filename
 
     return spec1d
