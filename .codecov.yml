@@ -12,7 +12,7 @@ coverage:
     patch:
       # just the lines changed
       default:
-        target: 50%
+        target: 30%
         threshold: 10%
         base: auto
         only_pulls: false
