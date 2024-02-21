@@ -123,6 +123,31 @@ def test_add_data(db):
         conn.commit()
 
 
+def test_orm_use(db):
+    # Tests using the SQLAlchemy ORM
+
+    # Adding and removing a basic source
+    s = Sources(source="V4046 Sgr", ra=273.54, dec=-32.79, reference="Schm10")
+    with db.session as session:
+        session.add(s)
+        # session.add_all([s])  # if adding a list of entries
+        session.commit()
+
+    assert db.query(db.Sources).filter(db.Sources.c.source == "V4046 Sgr").count() == 1
+
+    # Remove added source so other tests don't include it
+    with db.session as session:
+        session.delete(s)
+        session.commit()
+
+    assert db.query(db.Sources).filter(db.Sources.c.source == "V4046 Sgr").count() == 0
+
+    # Adding a source with problematic ra/dec to test validation
+    with pytest.raises(ValueError):
+        s2 = Sources(source="V4046 Sgr", ra=9999, dec=-32.79, reference="Schm10")
+    with pytest.raises(ValueError):
+        s2 = Sources(source="V4046 Sgr", ra=273.54, dec=-9999, reference="Schm10")
+    
 
 def test_add_table_data(db):
     # Test the add_table_data method

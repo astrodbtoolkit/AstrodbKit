@@ -417,6 +417,58 @@ We recommend the later to output the entire contents to disk::
 .. note:: To properly capture database deletes, the contents of the specified directory is first cleared before
           creating JSON files representing the current state of the database.
 
+Using the SQLAlchemy ORM
+========================
+
+The SQLAlchemy ORM (Object Relational Mapping) can be used for many of the examples provided above. 
+This also allows for adding extra functionality to your schema, such as validation.
+
+For example, the schema of your sources table could be written to validate RA/Dec as follows::
+
+    from sqlalchemy import Column, Float, String
+    from sqlalchemy.orm import validates
+
+    class Sources(Base):
+        """ORM for the sources table. This stores the main identifiers for our objects along with ra and dec"""
+
+        __tablename__ = "Sources"
+        source = Column(String(100), primary_key=True, nullable=False)
+        ra = Column(Float)
+        dec = Column(Float)
+
+        @validates("ra")
+        def validate_ra(self, key, value):
+            if value > 360 or value < 0:
+                raise ValueError("RA not in allowed range (0..360)")
+            return value
+        
+        @validates("dec")
+        def validate_dec(self, key, value):
+            if value > 90 or value < -90:
+                raise ValueError("Dec not in allowed range (-90..90)")
+            return value
+
+In your scripts, you can then create objects and populate them accordingly.
+For example::
+
+    from astrodbkit2.astrodb import Database
+    from schema import Sources
+
+    db = Database(connection_string)
+
+    # Create a new object and insert to database
+    s = Sources(source="V4046 Sgr", ra=273.54, dec=-32.79)
+    with db.session as session:
+        session.add(s)
+        session.commit()
+
+If the RA or Dec fail the validation checks, the creation of the object will raise a ValueError exception. 
+
+One can also use `session.add_all()` to insert a list of table entries and `session.delete()` to delete a single one. 
+These options can facilitate the creation of robust ingest scripts that are both intuitive (ie, instantiating objects in a pythonic way) 
+and that can take care of validating input values before they get to the database.
+
+
 Reference/API
 =============
 
