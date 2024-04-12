@@ -1,10 +1,13 @@
-# Logic to implement and set up views in SQLAlchemy
-# Adapted from https://github.com/sqlalchemy/sqlalchemy/wiki/Views
+"""Logic to implement and set up views in SQLAlchemy
+Adapted from https://github.com/sqlalchemy/sqlalchemy/wiki/Views
+"""
 
 import sqlalchemy as sa
 from sqlalchemy.ext import compiler
 from sqlalchemy.schema import DDLElement
 from sqlalchemy.sql import table
+
+# pylint: disable=abstract-method, missing-function-docstring, unused-argument, redefined-outer-name, protected-access, missing-class-docstring
 
 
 class CreateView(DDLElement):
@@ -20,6 +23,7 @@ class DropView(DDLElement):
 
 @compiler.compiles(CreateView)
 def _create_view(element, compiler, **kw):
+    # pylint: disable=consider-using-f-string
     return "CREATE VIEW %s AS %s" % (
         element.name,
         compiler.sql_compiler.process(element.selectable, literal_binds=True),
@@ -28,6 +32,7 @@ def _create_view(element, compiler, **kw):
 
 @compiler.compiles(DropView)
 def _drop_view(element, compiler, **kw):
+    # pylint: disable=consider-using-f-string
     return "DROP VIEW %s" % (element.name)
 
 
@@ -42,16 +47,12 @@ def view_doesnt_exist(ddl, target, connection, **kw):
 def view(name, metadata, selectable):
     t = table(name)
 
-    t._columns._populate_separate_keys(
-        col._make_proxy(t) for col in selectable.selected_columns
-    )
+    t._columns._populate_separate_keys(col._make_proxy(t) for col in selectable.selected_columns)
 
     sa.event.listen(
         metadata,
         "after_create",
         CreateView(name, selectable).execute_if(callable_=view_doesnt_exist),
     )
-    sa.event.listen(
-        metadata, "before_drop", DropView(name).execute_if(callable_=view_exists)
-    )
+    sa.event.listen(metadata, "before_drop", DropView(name).execute_if(callable_=view_exists))
     return t
