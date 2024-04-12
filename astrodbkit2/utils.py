@@ -1,14 +1,13 @@
-# Utility functions for Astrodbkit2
+"""Utility functions for Astrodbkit2"""
 
 import re
-import numpy as np
 import functools
 import warnings
 from datetime import datetime
 from decimal import Decimal
 from astroquery.simbad import Simbad
 
-__all__ = ['json_serializer', 'get_simbad_names']
+__all__ = ["json_serializer", "get_simbad_names"]
 
 
 def deprecated_alias(**aliases):
@@ -18,12 +17,15 @@ def deprecated_alias(**aliases):
     in order to handle deprecation of renamed columns
     To use: add @deprecated_alias(old_name='new_name')
     """
+
     def deco(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             rename_kwargs(f.__name__, kwargs, aliases)
             return f(*args, **kwargs)
+
         return wrapper
+
     return deco
 
 
@@ -32,17 +34,15 @@ def rename_kwargs(func_name, kwargs, aliases):
     for alias, new in aliases.items():
         if alias in kwargs:
             if new in kwargs:
-                raise TypeError('{} received both {} and {}'.format(
-                    func_name, alias, new))
-            warnings.warn('{} is deprecated; use {}'.format(alias, new),
-                          DeprecationWarning)
+                raise TypeError(f"{func_name} received both {alias} and {new}")
+            warnings.warn(f"{alias} is deprecated; use {new}", DeprecationWarning)
             kwargs[new] = kwargs.pop(alias)
 
 
 def json_serializer(obj):
     """Function describing how things should be serialized in JSON.
     Datetime objects are saved with datetime.isoformat(), Parameter class objects use clean_dict()
-    while all others use __dict__ """
+    while all others use __dict__"""
 
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -51,7 +51,7 @@ def json_serializer(obj):
         return float(obj)
 
     if isinstance(obj, bytes):
-        return obj.decode('utf-8')
+        return obj.decode("utf-8")
 
     return obj.__dict__
 
@@ -61,7 +61,7 @@ def datetime_json_parser(json_dict):
     This is required to get datetime objects into the database.
     Adapted from: https://stackoverflow.com/questions/8793448/how-to-convert-to-a-python-datetime-object-with-json-loads
     """
-    for (key, value) in json_dict.items():
+    for key, value in json_dict.items():
         if isinstance(value, str):
             try:
                 json_dict[key] = datetime.fromisoformat(value)
@@ -90,14 +90,14 @@ def _name_formatter(name):
     name = re.sub(r"\s\s+", " ", name)
 
     # Clean up Simbad types
-    strings_to_delete = ['V* ', 'EM* ', 'NAME ', '** ', 'Cl* ', '* ']
+    strings_to_delete = ["V* ", "EM* ", "NAME ", "** ", "Cl* ", "* "]
     for pattern in strings_to_delete:
-        name = name.replace(pattern, '')
+        name = name.replace(pattern, "")
 
     name = name.strip()
 
     # Clean up 'hidden' names from Simbad
-    if 'HIDDEN' in name.upper():
+    if "HIDDEN" in name.upper():
         name = None
 
     return name
@@ -121,9 +121,9 @@ def get_simbad_names(name, verbose=False):
 
     t = Simbad.query_objectids(name)
     if t is not None and len(t) > 0:
-        temp = [_name_formatter(s) for s in t['ID'].tolist()]
-        return [s for s in temp if s is not None and s != '']
+        temp = [_name_formatter(s) for s in t["ID"].tolist()]
+        return [s for s in temp if s is not None and s != ""]
     else:
         if verbose:
-            print(f'No Simbad match for {name}')
+            print(f"No Simbad match for {name}")
         return [name]
