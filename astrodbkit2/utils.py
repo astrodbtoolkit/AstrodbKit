@@ -1,10 +1,11 @@
 """Utility functions for Astrodbkit2"""
 
-import re
 import functools
+import re
 import warnings
 from datetime import datetime
 from decimal import Decimal
+
 from astroquery.simbad import Simbad
 
 __all__ = ["json_serializer", "get_simbad_names"]

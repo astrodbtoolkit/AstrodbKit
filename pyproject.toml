@@ -16,7 +16,10 @@ build-backend = 'setuptools.build_meta'
 # See https://docs.astral.sh/ruff/rules/
 select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010"]
 #select = ["ALL"]
-ignore = ["PLR"]  # pylint refactor
+ignore = ["PLR",  # pylint refactor
+          "F403", # star imports used
+          "F405", # referring to import from star imports
+          ]  
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

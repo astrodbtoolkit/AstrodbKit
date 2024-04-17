@@ -1,19 +1,22 @@
 # Testing for astrodb
 
-import os
-import json
-import pytest
 import io
+import json
+import os
+
 import pandas as pd
+import pytest
 import sqlalchemy as sa
-from sqlalchemy.exc import IntegrityError
-from astropy.table import Table
 from astropy.coordinates import SkyCoord
-from astropy.units.quantity import Quantity
 from astropy.io import ascii
-from astrodbkit2.astrodb import Database, create_database, Base, copy_database_schema
-from astrodbkit2.views import view
+from astropy.table import Table
+from astropy.units.quantity import Quantity
+from sqlalchemy.exc import IntegrityError
+
+from astrodbkit2.astrodb import Database, copy_database_schema, create_database
 from astrodbkit2.schema_example import *
+from astrodbkit2.views import view
+
 try:
     import mock
 except ImportError:
@@ -26,7 +29,7 @@ DB_PATH = 'temp.db'
 def test_nodatabase():
     connection_string = 'sqlite:///:memory:'
     with pytest.raises(RuntimeError, match='Create database'):
-        db = Database(connection_string)
+        _ = Database(connection_string)
 
 
 @pytest.fixture(scope="module")
@@ -144,9 +147,9 @@ def test_orm_use(db):
 
     # Adding a source with problematic ra/dec to test validation
     with pytest.raises(ValueError):
-        s2 = Sources(source="V4046 Sgr", ra=9999, dec=-32.79, reference="Schm10")
+        _ = Sources(source="V4046 Sgr", ra=9999, dec=-32.79, reference="Schm10")
     with pytest.raises(ValueError):
-        s2 = Sources(source="V4046 Sgr", ra=273.54, dec=-9999, reference="Schm10")
+        _ = Sources(source="V4046 Sgr", ra=273.54, dec=-9999, reference="Schm10")
     
 
 def test_add_table_data(db):

@@ -2,8 +2,8 @@
 # Adapted from https://github.com/sqlalchemy/sqlalchemy/wiki/Views
 
 import sqlalchemy as sa
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, declarative_base
+
 from astrodbkit2.views import *
 
 

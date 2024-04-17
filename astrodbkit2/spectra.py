@@ -1,15 +1,16 @@
 """Functions to handle loading of spectrum objects"""
 
 import os
-import numpy as np
+
 import astropy.units as u
-from astropy.wcs import WCS
+import numpy as np
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
+from astropy.wcs import WCS
 from specutils import Spectrum1D
-from specutils.io.registers import data_loader
 from specutils.io.parsing_utils import read_fileobj_or_hdulist
+from specutils.io.registers import data_loader
 
 # pylint: disable=no-member, unused-argument
 
