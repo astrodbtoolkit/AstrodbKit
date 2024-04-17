@@ -1,6 +1,6 @@
-# Main database handler code
+"""Main database handler code"""
 
-__all__ = ['__version__', 'Database', 'or_', 'and_', 'create_database']
+__all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 
 import os
 import json
@@ -24,25 +24,28 @@ from .spectra import load_spectrum
 try:
     from .version import version as __version__
 except ImportError:
-    __version__ = ''
+    __version__ = ""
 
-# pylint: disable=dangerous-default-value, too-many-arguments, trailing-whitespace
+# pylint: disable=dangerous-default-value, too-many-arguments, trailing-whitespace, abstract-method
 
 # For SQLAlchemy ORM Declarative mapping
-# User created schema should import and use astrodb.Base so that 
+# User created schema should import and use astrodb.Base so that
 # create_database can properly handle them
 Base = declarative_base()
 
 
 class AstrodbQuery(Query):
-    # Subclassing the Query class to add more functionality.
-    # See: https://stackoverflow.com/questions/15936111/sqlalchemy-can-you-add-custom-methods-to-the-query-object
-    def _make_astropy(self):
+    """Subclassing the Query class to add more functionality.
+    See: https://stackoverflow.com/questions/15936111/sqlalchemy-can-you-add-custom-methods-to-the-query-object
+    """
+
+    def _make_astropy(self, **kwargs):
+        """Helper method to convert query results to an Astropy Table"""
         temp = self.all()
         if len(temp) > 0:
-            t = AstropyTable(rows=temp, names=temp[0]._fields)
+            t = AstropyTable(rows=temp, names=temp[0]._fields, **kwargs)
         else:
-            t = AstropyTable(temp)
+            t = AstropyTable(temp, **kwargs)
         return t
 
     def astropy(self, spectra=None, spectra_format=None, **kwargs):
@@ -62,7 +65,7 @@ class AstrodbQuery(Query):
             Table output of query
         """
 
-        t = self._make_astropy()
+        t = self._make_astropy(**kwargs)
 
         # Apply spectra conversion
         if spectra is not None:
@@ -75,7 +78,7 @@ class AstrodbQuery(Query):
         return t
 
     def table(self, *args, **kwargs):
-        # Alternative for getting astropy Table
+        """Alternative method for getting astropy Table"""
         return self.astropy(*args, **kwargs)
 
     def pandas(self, spectra=None, spectra_format=None, **kwargs):
@@ -96,7 +99,7 @@ class AstrodbQuery(Query):
         """
 
         # Relying on astropy to convert to pandas for simplicity as that handles the column names
-        df = self._make_astropy().to_pandas()
+        df = self._make_astropy(**kwargs).to_pandas()
 
         # Apply spectra conversion
         if spectra is not None:
@@ -108,7 +111,7 @@ class AstrodbQuery(Query):
 
         return df
 
-    def spectra(self, spectra=['spectrum', 'access_url'], fmt='astropy', **kwargs):
+    def spectra(self, spectra=["spectrum", "access_url"], fmt="astropy", **kwargs):
         """
         Convenience method fo that uses default column name for spectra conversion
 
@@ -119,7 +122,7 @@ class AstrodbQuery(Query):
         fmt : str
             Output format (Default: astropy)
         """
-        if fmt == 'pandas':
+        if fmt == "pandas":
             return self.pandas(spectra=spectra, **kwargs)
         else:
             return self.astropy(spectra=spectra, **kwargs)
@@ -154,13 +157,13 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
 
     engine = create_engine(connection_string, connect_args=connection_arguments)
     if not base:
-       base = declarative_base()
+        base = declarative_base()
     base.metadata.bind = engine
-    Session = sessionmaker(bind=engine, query_cls=AstrodbQuery)
+    Session = sessionmaker(bind=engine, query_cls=AstrodbQuery)  # pylint: disable=invalid-name
     session = Session()
 
     # Enable foreign key checks in SQLite
-    if 'sqlite' in connection_string and sqlite_foreign:
+    if "sqlite" in connection_string and sqlite_foreign:
         set_sqlite()
     # elif 'postgresql' in connection_string:
     #     # Set up schema in postgres (must be lower case?)
@@ -172,7 +175,9 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
 
 
 def set_sqlite():
-    # Special overrides when using SQLite
+    """Special overrides when using SQLite"""
+    # pylint: disable=unused-argument
+
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         # Enable foreign key checking in SQLite
@@ -201,8 +206,9 @@ def create_database(connection_string, drop_tables=False):
     return session, base, engine
 
 
-def copy_database_schema(source_connection_string, destination_connection_string, sqlite_foreign=False,
-                         ignore_tables=[], copy_data=False):
+def copy_database_schema(
+    source_connection_string, destination_connection_string, sqlite_foreign=False, ignore_tables=[], copy_data=False
+):
     """
     Copy a database schema (ie, all tables and columns) from one database to another
     Adapted from https://gist.github.com/pawl/9935333
@@ -237,7 +243,7 @@ def copy_database_schema(source_connection_string, destination_connection_string
 
         # Copy schema and create newTable from oldTable
         for column in src_metadata.tables[table.name].columns:
-            dest_table.append_column(column._copy())
+            dest_table.append_column(column._copy())  # pylint: disable=protected-access
         dest_table.create(bind=dest_engine)
 
         # Copy data, row by row
@@ -255,14 +261,19 @@ def copy_database_schema(source_connection_string, destination_connection_string
 
 
 class Database:
-    def __init__(self, connection_string,
-                 reference_tables=REFERENCE_TABLES,
-                 primary_table=PRIMARY_TABLE,
-                 primary_table_key=PRIMARY_TABLE_KEY,
-                 foreign_key=FOREIGN_KEY,
-                 column_type_overrides={},
-                 sqlite_foreign=True,
-                 connection_arguments={}):
+    """Database handler class"""
+
+    def __init__(
+        self,
+        connection_string,
+        reference_tables=REFERENCE_TABLES,
+        primary_table=PRIMARY_TABLE,
+        primary_table_key=PRIMARY_TABLE_KEY,
+        foreign_key=FOREIGN_KEY,
+        column_type_overrides={},
+        sqlite_foreign=True,
+        connection_arguments={},
+    ):
         """
         Wrapper for database calls and utility functions
 
@@ -289,11 +300,12 @@ class Database:
             Additional connection arguments, like {'check_same_thread': False}. Default: {}
         """
 
-        if connection_string == 'sqlite://':
+        if connection_string == "sqlite://":
             self.session, self.base, self.engine = create_database(connection_string)
         else:
-            self.session, self.base, self.engine = load_connection(connection_string, sqlite_foreign=sqlite_foreign,
-                                                                   connection_arguments=connection_arguments)
+            self.session, self.base, self.engine = load_connection(
+                connection_string, sqlite_foreign=sqlite_foreign, connection_arguments=connection_arguments
+            )
 
         # Convenience methods
         self.query = self.session.query
@@ -311,9 +323,11 @@ class Database:
         self._foreign_key = foreign_key
 
         if len(self.metadata.tables) == 0:
-            print('Database empty. Import schema (eg, from astrodbkit.schema_example import *) '
-                  'and then run create_database()')
-            raise RuntimeError('Create database first.')
+            print(
+                "Database empty. Import schema (eg, from astrodbkit.schema_example import *) "
+                "and then run create_database()"
+            )
+            raise RuntimeError("Create database first.")
 
         # Set tables as explicit attributes of this class
         for table in self.metadata.tables:
@@ -322,19 +336,19 @@ class Database:
         # If column overrides are provided, this will set the types to whatever the user provided
         if len(column_type_overrides) > 0:
             for k, v in column_type_overrides.items():
-                tab, col = k.split('.')
+                tab, col = k.split(".")
                 self.metadata.tables[tab].columns[col].type = v
 
     # Generic methods
     @staticmethod
     def _handle_format(temp, fmt):
         # Internal method to handle SQLAlchemy output and format it
-        if fmt.lower() in ('astropy', 'table'):
+        if fmt.lower() in ("astropy", "table"):
             if len(temp) > 0:
                 results = AstropyTable(rows=temp, names=temp[0]._fields)
             else:
                 results = AstropyTable(temp)
-        elif fmt.lower() == 'pandas':
+        elif fmt.lower() == "pandas":
             if len(temp) > 0:
                 results = pd.DataFrame(temp, columns=temp[0]._fields)
             else:
@@ -426,10 +440,17 @@ class Database:
         return data_dict
 
     # Text query methods
-    @deprecated_alias(format='fmt')
-    def search_object(self, name, output_table=None, resolve_simbad=False,
-                      table_names={'Sources': ['source', 'shortname'], 'Names': ['other_name']},
-                      fmt='table', fuzzy_search=True, verbose=True):
+    @deprecated_alias(format="fmt")
+    def search_object(
+        self,
+        name,
+        output_table=None,
+        resolve_simbad=False,
+        table_names={"Sources": ["source", "shortname"], "Names": ["other_name"]},
+        fmt="table",
+        fuzzy_search=True,
+        verbose=True,
+    ):
         """
         Query the database for the object specified. By default will return the primary table,
         but this can be specified. Users can also request to resolve the object name via Simbad and query against
@@ -462,7 +483,7 @@ class Database:
         if output_table is None:
             output_table = self._primary_table
         if output_table not in self.metadata.tables:
-            raise RuntimeError(f'Table {output_table} is not in the database')
+            raise RuntimeError(f"Table {output_table} is not in the database")
 
         match_column = self._foreign_key
         if output_table == self._primary_table:
@@ -473,7 +494,7 @@ class Database:
             simbad_names = get_simbad_names(name, verbose=verbose)
             name = list(set(simbad_names + [name]))
             if verbose:
-                print(f'Including Simbad names, searching for: {name}')
+                print(f"Including Simbad names, searching for: {name}")
 
         # Turn name into a list
         if not isinstance(name, list):
@@ -482,7 +503,7 @@ class Database:
         # Verify provided tables exist in database
         for k in table_names.keys():
             if k not in self.metadata.tables:
-                raise RuntimeError(f'Table {k} is not in the database')
+                raise RuntimeError(f"Table {k} is not in the database")
 
         # Get source for objects that match the provided names
         # The following will build the filters required to query all specified tables
@@ -493,11 +514,9 @@ class Database:
         for k, col_list in table_names.items():
             for v in col_list:
                 if fuzzy_search:
-                    filters = [self.metadata.tables[k].columns[v].ilike(f'%{n}%')
-                               for n in name]
+                    filters = [self.metadata.tables[k].columns[v].ilike(f"%{n}%") for n in name]
                 else:
-                    filters = [self.metadata.tables[k].columns[v].ilike(f'{n}')
-                               for n in name]
+                    filters = [self.metadata.tables[k].columns[v].ilike(f"{n}") for n in name]
 
                 # Column to be returned
                 if k == self._primary_table:
@@ -505,22 +524,21 @@ class Database:
                 else:
                     output_to_match = self.metadata.tables[k].columns[self._foreign_key]
 
-                temp = self.query(output_to_match).\
-                    filter(or_(*filters)).\
-                    distinct().\
-                    all()
+                temp = self.query(output_to_match).filter(or_(*filters)).distinct().all()
                 matched_names += [s[0] for s in temp]
 
         # Join the matched sources with the desired table
-        temp = self.query(self.metadata.tables[output_table]).\
-            filter(self.metadata.tables[output_table].columns[match_column].in_(matched_names)).\
-            all()
+        temp = (
+            self.query(self.metadata.tables[output_table])
+            .filter(self.metadata.tables[output_table].columns[match_column].in_(matched_names))
+            .all()
+        )
 
         results = self._handle_format(temp, fmt)
 
         return results
 
-    def search_string(self, value, fmt='table', fuzzy_search=True, verbose=True):
+    def search_string(self, value, fmt="table", fuzzy_search=True, verbose=True):
         """
         Search an abitrary string across all string columns in the full database
 
@@ -545,24 +563,24 @@ class Database:
         for table in self.metadata.tables:
             # Gather only string-type columns
             columns = self.metadata.tables[table].columns
-            col_list = [c for c in columns
-                        if isinstance(c.type, sqlalchemy_types.String)
-                        or isinstance(c.type, sqlalchemy_types.Text)
-                        or isinstance(c.type, sqlalchemy_types.Unicode)]
+            col_list = [
+                c
+                for c in columns
+                if isinstance(c.type, sqlalchemy_types.String)
+                or isinstance(c.type, sqlalchemy_types.Text)
+                or isinstance(c.type, sqlalchemy_types.Unicode)
+            ]
 
             # Construct filters to query for each string column
             filters = []
             for c in col_list:
                 if fuzzy_search:
-                    filters += [c.ilike(f'%{value}%')]
+                    filters += [c.ilike(f"%{value}%")]
                 else:
-                    filters += [c.ilike(f'{value}')]
+                    filters += [c.ilike(f"{value}")]
 
             # Perform the actual query
-            temp = self.query(self.metadata.tables[table]). \
-                filter(or_(*filters)). \
-                distinct(). \
-                all()
+            temp = self.query(self.metadata.tables[table]).filter(or_(*filters)).distinct().all()
 
             # Append results to dictionary output in specified format
             if len(temp) > 0:
@@ -575,8 +593,8 @@ class Database:
         return output_dict
 
     # General query methods
-    @deprecated_alias(format='fmt')
-    def sql_query(self, query, fmt='default'):
+    @deprecated_alias(format="fmt")
+    def sql_query(self, query, fmt="default"):
         """
         Wrapper for a direct SQL query.
 
@@ -597,8 +615,18 @@ class Database:
 
         return self._handle_format(temp, fmt)
 
-    def query_region(self, target_coords, radius=Quantity(10, unit='arcsec'), output_table=None, fmt='table',
-                    coordinate_table=None, ra_col='ra', dec_col='dec', frame='icrs', unit='deg'):
+    def query_region(
+        self,
+        target_coords,
+        radius=Quantity(10, unit="arcsec"),
+        output_table=None,
+        fmt="table",
+        coordinate_table=None,
+        ra_col="ra",
+        dec_col="dec",
+        frame="icrs",
+        unit="deg",
+    ):
         """
         Perform a cone search of the given coordinates and return the specified output table.
 
@@ -633,11 +661,11 @@ class Database:
         if output_table is None:
             output_table = self._primary_table
         if output_table not in self.metadata.tables:
-            raise RuntimeError(f'Table {output_table} is not in the database')
+            raise RuntimeError(f"Table {output_table} is not in the database")
 
         # Radius conversion
         if not isinstance(radius, Quantity):
-            radius = Quantity(radius, unit='arcsec')
+            radius = Quantity(radius, unit="arcsec")
 
         # Get the column name to use for matching
         match_column = self._foreign_key
@@ -648,19 +676,19 @@ class Database:
         if coordinate_table is None:
             coordinate_table = self._primary_table
         if coordinate_table not in self.metadata.tables:
-            raise RuntimeError(f'Table {coordinate_table} is not in the database')
+            raise RuntimeError(f"Table {coordinate_table} is not in the database")
         coordinate_match_column = self._foreign_key
         if coordinate_table == self._primary_table:
             coordinate_match_column = self._primary_table_key
 
         # This is adapted from the original astrodbkit code
         df = self.query(self.metadata.tables[coordinate_table]).pandas()
-        df[['ra', 'dec']] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
-        mask = df['ra'].isnull()
+        df[["ra", "dec"]] = df[[ra_col, dec_col]].apply(pd.to_numeric)  # convert everything to floats
+        mask = df["ra"].isnull()
         df = df[~mask]
 
         # Native use of astropy SkyCoord objects here
-        coord_list = SkyCoord(df['ra'].tolist(), df['dec'].tolist(), frame=frame, unit=unit)
+        coord_list = SkyCoord(df["ra"].tolist(), df["dec"].tolist(), frame=frame, unit=unit)
         sep_list = coord_list.separation(target_coords)  # sky separations for each db object against target position
         good = sep_list <= radius
 
@@ -670,9 +698,11 @@ class Database:
             matched_list = []
 
         # Join the matched sources with the desired table
-        temp = self.query(self.metadata.tables[output_table]). \
-            filter(self.metadata.tables[output_table].columns[match_column].in_(matched_list)). \
-            all()
+        temp = (
+            self.query(self.metadata.tables[output_table])
+            .filter(self.metadata.tables[output_table].columns[match_column].in_(matched_list))
+            .all()
+        )
         results = self._handle_format(temp, fmt)
 
         return results
@@ -691,6 +721,8 @@ class Database:
             Name of directory in which to save the output JSON
         """
 
+        # pylint: disable=unnecessary-dunder-call
+
         if isinstance(name, str):
             source_name = str(name)
             data = self.inventory(name)
@@ -699,8 +731,8 @@ class Database:
             data = self.inventory(name.__getattribute__(self._primary_table_key))
 
         # Clean up spaces and other special characters
-        filename = source_name.lower().replace(' ', '_').replace('*', '').strip() + '.json'
-        with open(os.path.join(directory, filename), 'w') as f:
+        filename = source_name.lower().replace(" ", "_").replace("*", "").strip() + ".json"
+        with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
     def save_reference_table(self, table, directory):
@@ -716,9 +748,9 @@ class Database:
 
         results = self.session.query(self.metadata.tables[table]).all()
         data = [row._asdict() for row in results]
-        filename = table + '.json'
+        filename = table + ".json"
         if len(data) > 0:
-            with open(os.path.join(directory, filename), 'w') as f:
+            with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
                 f.write(json.dumps(data, indent=4, default=json_serializer))
 
     def save_database(self, directory, clear_first=True):
@@ -737,7 +769,7 @@ class Database:
 
         # Clear existing files first from that directory
         if clear_first:
-            print('Clearing existing JSON files...')
+            print("Clearing existing JSON files...")
             for filename in os.listdir(directory):
                 os.remove(os.path.join(directory, filename))
 
@@ -754,7 +786,7 @@ class Database:
             self.save_json(row, directory)
 
     # Object input methods
-    def add_table_data(self, data, table, fmt='csv'):
+    def add_table_data(self, data, table, fmt="csv"):
         """
         Method to insert data into the database. Column names in the file must match those of the database table.
         Additional columns in the supplied table are ignored.
@@ -775,14 +807,14 @@ class Database:
             Data format. Default: csv
         """
 
-        if fmt.lower() == 'csv':
+        if fmt.lower() == "csv":
             df = pd.read_csv(data)
-        elif fmt.lower() == 'astropy':
+        elif fmt.lower() == "astropy":
             df = data.to_pandas()
-        elif fmt.lower() == 'pandas':
+        elif fmt.lower() == "pandas":
             df = data.copy()
         else:
-            raise RuntimeError(f'Unrecognized format {fmt}')
+            raise RuntimeError(f"Unrecognized format {fmt}")
 
         # Foreign key constraints will prevent inserts of missing sources,
         # but for clarity we'll check first and exit if there are missing sources
@@ -792,9 +824,9 @@ class Database:
             matched_sources = self.query(primary_column).filter(primary_column.in_(source_list)).all()
             missing_sources = np.setdiff1d(source_list, matched_sources)
             if len(missing_sources) > 0:
-                print(f'{len(missing_sources)} missing source(s):')
+                print(f"{len(missing_sources)} missing source(s):")
                 print(missing_sources)
-                raise RuntimeError(f'There are missing entries in {self._primary_table} table. These must exist first.')
+                raise RuntimeError(f"There are missing entries in {self._primary_table} table. These must exist first.")
 
         # Convert format for SQLAlchemy
         data = [row.to_dict() for _, row in df.iterrows()]
@@ -821,14 +853,15 @@ class Database:
             Flag to enable diagnostic messages
         """
 
-        filename = os.path.join(directory, table+'.json')
+        filename = os.path.join(directory, table + ".json")
         if os.path.exists(filename):
-            with open(filename, 'r') as f:
+            with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 with self.engine.begin() as conn:
                     conn.execute(self.metadata.tables[table].insert().values(data))
         else:
-            if verbose: print(f'{table}.json not found.')
+            if verbose:
+                print(f"{table}.json not found.")
 
     def load_json(self, filename):
         """
@@ -840,7 +873,7 @@ class Database:
             Name of directory containing the JSON file
         """
 
-        with open(filename, 'r') as f:
+        with open(filename, "r", encoding="utf-8") as f:
             data = json.load(f, object_hook=datetime_json_parser)
 
         # Loop through the dictionary, adding data to the database.
@@ -874,32 +907,36 @@ class Database:
         # Clear existing database contents
         # reversed(sorted_tables) can help ensure that foreign key dependencies are taken care of first
         for table in reversed(self.metadata.sorted_tables):
-            if verbose: print(f'Deleting {table.name} table')
+            if verbose:
+                print(f"Deleting {table.name} table")
             with self.engine.begin() as conn:
                 conn.execute(self.metadata.tables[table.name].delete())
 
         # Load reference tables first
         for table in self._reference_tables:
-            if verbose: print(f'Loading {table} table')
+            if verbose:
+                print(f"Loading {table} table")
             self.load_table(table, directory, verbose=verbose)
 
         # Load object data
-        if verbose: print('Loading object tables')
+        if verbose:
+            print("Loading object tables")
         for file in tqdm(os.listdir(directory)):
             # Skip reference tables
-            core_name = file.replace('.json', '')
+            core_name = file.replace(".json", "")
             if core_name in self._reference_tables:
                 continue
 
             # Skip non-JSON files or hidden files
-            if not file.endswith('.json') or file.startswith('.'):
+            if not file.endswith(".json") or file.startswith("."):
                 continue
 
             self.load_json(os.path.join(directory, file))
 
     def dump_sqlite(self, database_name):
-        if self.engine.url.drivername == 'sqlite':
+        """Output database as a sqlite file"""
+        if self.engine.url.drivername == "sqlite":
             destconn = sqlite3.connect(database_name)
             self.engine.raw_connection().backup(destconn)
         else:
-            print('AstrodbKit2: dump_sqlite not available for non-sqlite databases')
+            print("AstrodbKit2: dump_sqlite not available for non-sqlite databases")

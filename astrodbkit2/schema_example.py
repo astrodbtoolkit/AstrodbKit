@@ -1,9 +1,11 @@
-# Example schema for part of the SIMPLE database
+"""Example schema for part of the SIMPLE database"""
 
+# pylint: disable=unused-argument, unused-import
+
+import enum
 import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, BigInteger, Enum, Date, DateTime
 from sqlalchemy.orm import validates
-import enum
 from astrodbkit2.astrodb import Base
 from astrodbkit2.views import view
 
@@ -23,12 +25,14 @@ class Publications(Base):
 
 
 class Telescopes(Base):
+    """Telescopes table"""
     __tablename__ = "Telescopes"
     name = Column(String(30), primary_key=True, nullable=False)
     reference = Column(String(30), ForeignKey("Publications.name", ondelete="cascade"))
 
 
 class Instruments(Base):
+    """Instruments table"""
     __tablename__ = "Instruments"
     name = Column(String(30), primary_key=True, nullable=False)
     reference = Column(String(30), ForeignKey("Publications.name", ondelete="cascade"))
@@ -39,6 +43,7 @@ class Instruments(Base):
 class Regime(enum.Enum):
     """Enumeration for spectral type regime"""
 
+    # pylint: disable=invalid-name
     optical = "optical"
     infrared = "infrared"
     ultraviolet = "ultraviolet"
@@ -60,24 +65,28 @@ class Sources(Base):
 
     @validates("ra")
     def validate_ra(self, key, value):
+        """Ensure RA is within bounds"""
         if value > 360 or value < 0:
             raise ValueError("RA not in allowed range (0..360)")
         return value
-    
+
     @validates("dec")
     def validate_dec(self, key, value):
+        """Ensure Dec is within bounds"""
         if value > 90 or value < -90:
             raise ValueError("Dec not in allowed range (-90..90)")
         return value
 
 
 class Names(Base):
+    """Names table"""
     __tablename__ = "Names"
     source = Column(String(100), ForeignKey("Sources.source", ondelete="cascade"), nullable=False, primary_key=True)
     other_name = Column(String(100), primary_key=True, nullable=False)
 
 
 class Photometry(Base):
+    """Photometry table"""
     __tablename__ = "Photometry"
     source = Column(
         String(100),
@@ -97,6 +106,7 @@ class Photometry(Base):
 
 
 class SpectralTypes(Base):
+    """SpectralTypes table"""
     __tablename__ = "SpectralTypes"
     source = Column(
         String(100),
