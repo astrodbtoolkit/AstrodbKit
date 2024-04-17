@@ -8,3 +8,8 @@ repos:
   rev: 1.7.2
   hooks:
     - id: darker
+      args:
+        - --lint
+        - ruff check
+      additional_dependencies:
+          - ruff==0.3.7
