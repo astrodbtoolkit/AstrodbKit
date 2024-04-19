@@ -1,12 +1,15 @@
 # Testing for utils
 
-import pytest
 import json
 from datetime import datetime
 from decimal import Decimal
 from io import StringIO
+
+import pytest
 from astropy.table import Table
-from astrodbkit2.utils import json_serializer, get_simbad_names, _name_formatter, datetime_json_parser
+
+from astrodbkit2.utils import _name_formatter, datetime_json_parser, get_simbad_names, json_serializer
+
 try:
     import mock
 except ImportError:

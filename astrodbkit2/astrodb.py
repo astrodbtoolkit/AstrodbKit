@@ -2,24 +2,25 @@
 
 __all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 
-import os
 import json
+import os
 import sqlite3
+
 import numpy as np
 import pandas as pd
+import sqlalchemy.types as sqlalchemy_types
+from astropy.coordinates import SkyCoord
 from astropy.table import Table as AstropyTable
 from astropy.units.quantity import Quantity
-from astropy.coordinates import SkyCoord
-from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.orm.query import Query
+from sqlalchemy import Table, and_, create_engine, event, or_, text
 from sqlalchemy.engine import Engine
-import sqlalchemy.types as sqlalchemy_types
-from sqlalchemy import event, create_engine, Table
-from sqlalchemy import or_, and_, text
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm.query import Query
 from tqdm import tqdm
-from . import REFERENCE_TABLES, PRIMARY_TABLE, PRIMARY_TABLE_KEY, FOREIGN_KEY
-from .utils import json_serializer, get_simbad_names, deprecated_alias, datetime_json_parser
+
+from . import FOREIGN_KEY, PRIMARY_TABLE, PRIMARY_TABLE_KEY, REFERENCE_TABLES
 from .spectra import load_spectrum
+from .utils import datetime_json_parser, deprecated_alias, get_simbad_names, json_serializer
 
 try:
     from .version import version as __version__

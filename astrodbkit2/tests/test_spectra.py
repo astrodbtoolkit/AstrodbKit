@@ -1,15 +1,16 @@
 # Tests for spectra functions
 
-import pytest
 import numpy as np
+import pytest
 from astropy.io import fits
 from astropy.units import Unit
+
 from astrodbkit2.spectra import (
-    identify_spex_prism,
     _identify_spex,
+    identify_spex_prism,
+    identify_wcs1d_multispec,
     load_spectrum,
     spex_prism_loader,
-    identify_wcs1d_multispec,
     wcs1d_multispec_loader,
 )
 
