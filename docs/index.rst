@@ -264,6 +264,10 @@ Example query for sources with declinations larger than 0::
 
     db.query(db.Sources).filter(db.Sources.c.dec > 0).table()
 
+Example query for rows with missing data::
+
+    db.query(db.Publications).filter(db.Publications.c.doi.is_(None)).table()
+
 Example query returning just a single column (source) and sorting sources by declination::
 
     db.query(db.Sources.c.source).order_by(db.Sources.c.dec).table()
