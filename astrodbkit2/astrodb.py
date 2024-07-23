@@ -790,6 +790,7 @@ class Database:
                     shutil.rmtree(file_path)
 
         # Output reference tables
+        print("Storing reference tables...")
         for table in self._reference_tables:
             # Skip reference tables that are not actually in the database
             if table not in self.metadata.tables.keys():
@@ -798,6 +799,7 @@ class Database:
             self.save_reference_table(table, directory, reference_directory=reference_directory)
 
         # Output primary objects
+        print("Storing individual sources...")
         for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
             self.save_json(row, directory)
 
