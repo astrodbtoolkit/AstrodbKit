@@ -781,8 +781,13 @@ class Database:
         # Clear existing files first from that directory
         if clear_first:
             print("Clearing existing JSON files...")
-            shutil.rmtree(directory)
-            os.mkdir(directory)
+            for file in os.listdir(directory):
+                file_path = os.path.join(directory, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    # This is to handle the reference directory
+                    shutil.rmtree(file_path)
 
         # Output reference tables
         for table in self._reference_tables:

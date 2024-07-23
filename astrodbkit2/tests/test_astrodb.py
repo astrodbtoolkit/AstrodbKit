@@ -426,8 +426,12 @@ def test_save_database(db, db_dir):
     # Test saving the database to JSON files
 
     # Clear temporary directory first
-    shutil.rmtree(db_dir) # also removes folder, so have to recreate
-    os.mkdir(db_dir)
+    for file in os.listdir(db_dir):
+        file_path = os.path.join(db_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
     db.save_database(db_dir)
 
@@ -465,8 +469,12 @@ def test_load_database(db, db_dir):
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Clear temporary directory and files
-    shutil.rmtree(db_dir)
-    os.mkdir(db_dir)
+    for file in os.listdir(db_dir):
+        file_path = os.path.join(db_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
 
 def test_copy_database_schema():
