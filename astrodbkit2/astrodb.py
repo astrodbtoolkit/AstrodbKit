@@ -901,7 +901,7 @@ class Database:
                     temp_dict[self._foreign_key] = source
                     conn.execute(self.metadata.tables[key].insert().values(temp_dict))
 
-    def load_database(self, directory, verbose=False):
+    def load_database(self, directory: str, verbose: bool=False, reference_directory: str="reference"):
         """
         Reload entire database from a directory of JSON files.
         Note that this will first clear existing tables.
@@ -912,6 +912,8 @@ class Database:
             Name of directory containing the JSON files
         verbose : bool
             Flag to enable diagnostic messages
+        reference_directory : str
+            Name of sub-directory to use for reference JSON files (eg, data/reference)
         """
 
         # Clear existing database contents
@@ -926,7 +928,11 @@ class Database:
         for table in self._reference_tables:
             if verbose:
                 print(f"Loading {table} table")
-            self.load_table(table, directory, verbose=verbose)
+            # Check if the reference table is in the sub-directory
+            if os.path.exists(os.path.join(directory, reference_directory, table+".json")):
+                self.load_table(table, os.path.join(directory, reference_directory), verbose=verbose)
+            else:
+                self.load_table(table, directory, verbose=verbose)
 
         # Load object data
         if verbose:

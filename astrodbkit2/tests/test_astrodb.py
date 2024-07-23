@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import shutil
 
 import pandas as pd
 import pytest
@@ -425,15 +426,13 @@ def test_save_database(db, db_dir):
     # Test saving the database to JSON files
 
     # Clear temporary directory first
-    # if not os.path.exists(DB_DIR):
-    #     os.mkdir(DB_DIR)
-    for file in os.listdir(db_dir):
-        os.remove(os.path.join(db_dir, file))
+    shutil.rmtree(db_dir) # also removes folder, so have to recreate
+    os.mkdir(db_dir)
 
     db.save_database(db_dir)
 
     # Check JSON data
-    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
+    assert os.path.exists(os.path.join(db_dir, "reference", 'Publications.json'))
     assert os.path.exists(os.path.join(db_dir, '2mass_j13571237+1428398.json'))
     assert not os.path.exists(os.path.join(db_dir, '2mass_j13571237+1428398 2.json'))
 
@@ -458,7 +457,7 @@ def test_load_database(db, db_dir):
 
     # Reload the database and check DB contents
     assert os.path.exists(db_dir)
-    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
+    assert os.path.exists(os.path.join(db_dir, "reference", 'Publications.json'))
     db.load_database(db_dir, verbose=True)
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 3
@@ -466,8 +465,8 @@ def test_load_database(db, db_dir):
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
     # Clear temporary directory and files
-    for file in os.listdir(db_dir):
-        os.remove(os.path.join(db_dir, file))
+    shutil.rmtree(db_dir)
+    os.mkdir(db_dir)
 
 
 def test_copy_database_schema():
