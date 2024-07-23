@@ -5,6 +5,7 @@ __all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 import json
 import os
 import sqlite3
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -780,8 +781,8 @@ class Database:
         # Clear existing files first from that directory
         if clear_first:
             print("Clearing existing JSON files...")
-            for filename in os.listdir(directory):
-                os.remove(os.path.join(directory, filename))
+            shutil.rmtree(directory)
+            os.mkdir(directory)
 
         # Output reference tables
         for table in self._reference_tables:
