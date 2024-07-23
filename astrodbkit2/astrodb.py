@@ -736,8 +736,9 @@ class Database:
         with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_reference_table(self, table, directory):
+    def save_reference_table(self, table: str, directory: str, reference_directory: str="reference"):
         """
+        Save the reference table to disk
 
         Parameters
         ----------
@@ -745,16 +746,22 @@ class Database:
             Name of reference table to output
         directory : str
             Name of directory in which to save the output JSON
+        reference_directory : str
+            Name of sub-directory to use for reference JSON files (eg, data/reference)
         """
+
+        # Create directory if not already present
+        if not os.path.isdir(os.path.join(directory, reference_directory)):
+            os.makedirs(os.path.join(directory, reference_directory))
 
         results = self.session.query(self.metadata.tables[table]).all()
         data = [row._asdict() for row in results]
         filename = table + ".json"
         if len(data) > 0:
-            with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
+            with open(os.path.join(directory, reference_directory, filename), "w", encoding="utf-8") as f:
                 f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_database(self, directory, clear_first=True):
+    def save_database(self, directory: str, clear_first: bool=True, reference_directory: str="reference"):
         """
         Output contents of the database into the specified directory as JSON files.
         Source objects have individual JSON files with all data for that object.
@@ -766,6 +773,8 @@ class Database:
             Name of directory in which to save the output JSON
         clear_first : bool
             First clear the directory of all existing JSON (useful to capture DB deletions). Default: True
+        reference_directory : str
+            Name of sub-directory to use for reference JSON files (eg, data/reference)
         """
 
         # Clear existing files first from that directory
@@ -780,7 +789,7 @@ class Database:
             if table not in self.metadata.tables.keys():
                 continue
 
-            self.save_reference_table(table, directory)
+            self.save_reference_table(table, directory, reference_directory=reference_directory)
 
         # Output primary objects
         for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
