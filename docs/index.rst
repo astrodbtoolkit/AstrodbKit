@@ -83,15 +83,18 @@ Loading the Database
 --------------------
 
 **Astrodbkit2** contains methods to output the full contents of the database as a list of JSON files.
-It can likewise read in a directory of these files to populate the database.
-This is how SIMPLE is currently version controlled. To load a database of this form, do the following::
+It can likewise read in a directory of these files to populate the database. 
+By default, reference tables (eg, Publications, Telescopes, etc) are stored in a `reference` sub-directory. 
+This is how SIMPLE is currently version controlled. 
+
+To load a database of this form, do the following::
 
     from astrodbkit2.astrodb import Database
 
     connection_string = 'sqlite:///SIMPLE.db'  # SQLite connection string
     db_dir = 'data'  # directory where JSON files are located
     db = Database(connection_string)
-    db.load_database(db_dir)
+    db.load_database(directory=db_dir, reference_directory="reference")
 
 .. note:: Database contents are cleared when loading from JSON files to ensure that the database only contains
           sources from on-disk files. We describe later how to use the :py:meth:`~astrodbkit2.astrodb.Database.save_db` method
@@ -406,8 +409,11 @@ Saving the Database
 ===================
 
 If users perform changes to a database, they will want to output this to disk to be version controlled.
-**Astrodbkit2** provides methods to save an individual source or reference table as well as the entire data.
-We recommend the later to output the entire contents to disk::
+**Astrodbkit2** provides methods to save an individual source or reference table as well as the entire data. 
+By default, reference tables are stored in a sub-directory called "reference"; this can be overwritten by 
+supplying a `reference_directory` variable into `save_database` or `save_reference_table`.
+
+We recommend using `save_database` as that outputs the entire database contents to disk::
 
     # Save single object
     db.save_json('2MASS J13571237+1428398', 'data')
@@ -416,7 +422,7 @@ We recommend the later to output the entire contents to disk::
     db.save_reference_table('Publications', 'data')
 
     # Save entire database to directory 'data'
-    db.save_database('data')
+    db.save_database(directory='data')
 
 .. note:: To properly capture database deletes, the contents of the specified directory is first cleared before
           creating JSON files representing the current state of the database.
