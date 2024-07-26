@@ -56,7 +56,7 @@ version = {attr = "astrodbkit2.__version__"}
 
 [tool.setuptools_scm]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
-version_file = "astrodbkit2/version.py"
+# version_file = "astrodbkit2/version.py"
 
 
 [tool.pytest.ini_options]
