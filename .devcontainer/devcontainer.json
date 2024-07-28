@@ -1,6 +1,6 @@
 {
 	"name": "Python 3",
-	"image": "mcr.microsoft.com/devcontainers/python:3.10",
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"features": {
 		"ghcr.io/devcontainers-contrib/features/coverage-py:1": {},
 		"ghcr.io/devcontainers-contrib/features/pylint:1": {}
@@ -10,7 +10,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install pytest && pip install -e ."
+	"postCreateCommand": "pip install -e .[all]"
 
 	// Configure tool-specific properties.
 	// "customizations": {},

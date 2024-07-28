@@ -1,13 +1,104 @@
 [build-system]
-
 requires = ["setuptools",
             "setuptools_scm",
             "wheel",
             "extension-helpers",
             "oldest-supported-numpy",
             "cython>=0.29.15"]
-
 build-backend = 'setuptools.build_meta'
+
+
+[project]
+name = "astrodbkit2"
+description = "Astronomical database handler code"
+dynamic = ["version"]
+readme = {file = "README.rst", content-type = "text/x-rst"}
+# license = {file = "licenses/LICENSE.rst"}
+license = {text = "BSD 3-Clause"}
+authors = [
+    {name = "David Rodriguez", email = "drodriguez@stsci.edu"},
+]
+requires-python = ">= 3.7"
+dependencies = [
+    "astropy",
+    "astroquery",
+    "sqlalchemy>=2.0",
+    "pandas>=1.0.4",
+    "packaging",
+    "specutils>=1.0",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-astropy",
+    "darker==1.7.2",
+    "black==23.9.1",
+    "pre-commit==3.4.0",
+    "ruff==0.3.7",
+]
+docs = [
+    "sphinx-astropy"
+]
+all = ["astrodbkit2[test, docs]"]
+
+[project.urls]
+Repository = "https://github.com/astrodbtoolkit/AstrodbKit2"
+
+
+[tool.setuptools]
+packages = ["astrodbkit2"]
+
+[tool.setuptools.dynamic]
+version = {attr = "astrodbkit2.__version__"}
+
+[tool.setuptools_scm]
+# can be empty if no extra settings are needed, presence enables setuptools_scm
+version_file = "astrodbkit2/version.py"
+
+
+[tool.pytest.ini_options]
+testpaths = "astrodbkit2"
+
+
+[tool.coverage.run]
+omit = [
+    "astrodbkit2/_astropy_init*",
+    "astrodbkit2/conftest.py",
+    "astrodbkit2/*setup_package*",
+    "astrodbkit2/tests/*",
+    "astrodbkit2/*/tests/*",
+    "astrodbkit2/extern/*",
+    "astrodbkit2/version*",
+    "*/astrodbkit2/_astropy_init*",
+    "*/astrodbkit2/conftest.py",
+    "*/astrodbkit2/*setup_package*",
+    "*/astrodbkit2/tests/*",
+    "*/astrodbkit2/*/tests/*",
+    "*/astrodbkit2/extern/*",
+    "*/astrodbkit2/version*",
+]
+
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    # Don't complain about packages we have installed
+    "except ImportError",
+    # Don't complain if tests don't hit assertions
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain about script hooks
+    "def main\\(.*\\):",
+    # Ignore branches that don't pertain to this version of Python
+    "pragma: py{ignore_python_version}",
+    # Don't complain about IPython completion helper
+    "def _ipython_key_completions_",
+]
+
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -31,6 +122,7 @@ line-length = 120
 [tool.ruff.lint.mccabe]
 # Flag errors (`C901`) whenever the complexity level exceeds 15.
 max-complexity = 15
+
 
 [tool.darker]
 line-length = 120
