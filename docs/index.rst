@@ -411,7 +411,9 @@ Saving the Database
 If users perform changes to a database, they will want to output this to disk to be version controlled.
 **Astrodbkit2** provides methods to save an individual source or reference table as well as the entire data. 
 By default, reference tables are stored in a sub-directory called "reference"; this can be overwritten by 
-supplying a `reference_directory` variable into `save_database` or `save_reference_table`.
+supplying a `reference_directory` variable into `save_database` or `save_reference_table`. 
+Similarly, source/object tables are stored in a sub-directory called "source" which can be overwritten by supplying 
+`source_directory`.
 
 We recommend using `save_database` as that outputs the entire database contents to disk::
 
@@ -422,7 +424,7 @@ We recommend using `save_database` as that outputs the entire database contents 
     db.save_reference_table('Publications', 'data')
 
     # Save entire database to directory 'data'
-    db.save_database(directory='data')
+    db.save_database(directory='data', reference_directory='reference', source_directory='source')
 
 .. note:: To properly capture database deletes, the contents of the specified directory is first cleared before
           creating JSON files representing the current state of the database.
