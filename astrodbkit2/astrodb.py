@@ -798,7 +798,7 @@ class Database:
             os.makedirs(os.path.join(directory, source_directory))
 
         # Output reference tables
-        print("Storing reference tables...")
+        print(f"Storing reference tables to {os.path.join(directory, reference_directory)}...")
         for table in self._reference_tables:
             # Skip reference tables that are not actually in the database
             if table not in self.metadata.tables.keys():
@@ -807,7 +807,7 @@ class Database:
             self.save_reference_table(table, directory, reference_directory=reference_directory)
 
         # Output primary objects
-        print("Storing individual sources...")
+        print(f"Storing individual sources to {os.path.join(directory, source_directory)}...")
         for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
             self.save_json(row, os.path.join(directory, source_directory))
 
