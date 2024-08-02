@@ -84,8 +84,7 @@ Loading the Database
 
 **Astrodbkit2** contains methods to output the full contents of the database as a list of JSON files.
 It can likewise read in a directory of these files to populate the database. 
-By default, reference tables (eg, Publications, Telescopes, etc) are stored in a `reference` sub-directory 
-and the source tables are in a `source` sub-directory. 
+By default, reference tables (eg, Publications, Telescopes, etc) and source tables are respectively stored in `reference/` and `source/` sub-directories of `data/`.
 This is how SIMPLE is currently version controlled. 
 
 To load a database of this form, do the following::
@@ -410,11 +409,10 @@ Saving the Database
 ===================
 
 If users perform changes to a database, they will want to output this to disk to be version controlled.
-**Astrodbkit2** provides methods to save an individual source or reference table as well as the entire data. 
-By default, reference tables are stored in a sub-directory called "reference"; this can be overwritten by 
+**Astrodbkit2** provides methods to save an individual source or reference table as well as all of the data stored in the database. 
+By default, reference tables are stored in a sub-directory of `data/` called "reference"; this can be overwritten by 
 supplying a `reference_directory` variable into `save_database` or `save_reference_table`. 
-Similarly, source/object tables are stored in a sub-directory called "source" which can be overwritten by supplying 
-`source_directory`.
+Similarly, source/object tables are stored in a sub-directory of `data/` called "source" which can be overwritten by supplying  a `source_directory` variable.
 
 We recommend using `save_database` as that outputs the entire database contents to disk::
 
@@ -424,7 +422,7 @@ We recommend using `save_database` as that outputs the entire database contents 
     # Save single reference table
     db.save_reference_table('Publications', 'data')
 
-    # Save entire database to directory 'data'
+    # Save entire database to directory 'data/' with 'reference/' and 'source/' subdirectories.
     db.save_database(directory='data', reference_directory='reference', source_directory='source')
 
 .. note:: To properly capture database deletes, the contents of the specified directory is first cleared before

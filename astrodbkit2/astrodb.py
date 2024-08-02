@@ -929,9 +929,9 @@ class Database:
         verbose : bool
             Flag to enable diagnostic messages
         reference_directory : str
-            Name of sub-directory to use for reference JSON files (eg, data/reference)
+            Relative path to sub-directory to use for reference JSON files (eg, data/reference)
         source_directory : str
-            Name of sub-directory to use for source JSON files (eg, data/source)
+            Relative path to sub-directory to use for source JSON files (eg, data/source)
         """
 
         # Clear existing database contents
