@@ -84,7 +84,8 @@ Loading the Database
 
 **Astrodbkit2** contains methods to output the full contents of the database as a list of JSON files.
 It can likewise read in a directory of these files to populate the database. 
-By default, reference tables (eg, Publications, Telescopes, etc) are stored in a `reference` sub-directory. 
+By default, reference tables (eg, Publications, Telescopes, etc) are stored in a `reference` sub-directory 
+and the source tables are in a `source` sub-directory. 
 This is how SIMPLE is currently version controlled. 
 
 To load a database of this form, do the following::
