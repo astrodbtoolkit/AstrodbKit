@@ -85,7 +85,7 @@ def alt_wcs1dmultispec():
     return fits.HDUList([hdu1])
 
 
-@mock.patch("astrodbkit2.spectra.fits.open")
+@mock.patch("astrodbkit.spectra.fits.open")
 def test_identify_spex_prism(mock_fits_open, good_spex_file):
     mock_fits_open.return_value = good_spex_file
 
@@ -95,7 +95,7 @@ def test_identify_spex_prism(mock_fits_open, good_spex_file):
     assert not identify_spex_prism("read", filename)
 
 
-@mock.patch("astrodbkit2.spectra.fits.open")
+@mock.patch("astrodbkit.spectra.fits.open")
 def test_identify_spex(mock_fits_open, good_spex_file, bad_spex_file):
     mock_fits_open.return_value = good_spex_file
     assert _identify_spex("filename")
@@ -103,7 +103,7 @@ def test_identify_spex(mock_fits_open, good_spex_file, bad_spex_file):
     assert not _identify_spex("filename")
 
 
-@mock.patch("astrodbkit2.spectra.fits.open")
+@mock.patch("astrodbkit.spectra.fits.open")
 def test_load_spex_prism(mock_fits_open, good_spex_file, bad_spex_file):
     # Test good example
     mock_fits_open.return_value = good_spex_file
@@ -115,7 +115,7 @@ def test_load_spex_prism(mock_fits_open, good_spex_file, bad_spex_file):
     assert spectrum.unit == Unit("erg")
 
 
-@mock.patch("astrodbkit2.spectra.read_fileobj_or_hdulist")
+@mock.patch("astrodbkit.spectra.read_fileobj_or_hdulist")
 def test_identify_wcs1d_multispec(mock_fits_open, good_wcs1dmultispec):
     mock_fits_open.return_value = good_wcs1dmultispec
 
@@ -123,7 +123,7 @@ def test_identify_wcs1d_multispec(mock_fits_open, good_wcs1dmultispec):
     assert identify_wcs1d_multispec("read", filename)
 
 
-@mock.patch("astrodbkit2.spectra.read_fileobj_or_hdulist")
+@mock.patch("astrodbkit.spectra.read_fileobj_or_hdulist")
 def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec, alt_wcs1dmultispec):
     mock_fits_open.return_value = good_wcs1dmultispec
 
@@ -142,7 +142,7 @@ def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec, alt_wcs1dmu
     assert spectrum.wavelength.unit == Unit("Angstrom")
 
 
-@mock.patch("astrodbkit2.spectra.Spectrum1D.read")
+@mock.patch("astrodbkit.spectra.Spectrum1D.read")
 def test_load_spectrum(mock_spectrum1d, monkeypatch):
     _ = load_spectrum("fake_file.txt")
     mock_spectrum1d.assert_called_with("fake_file.txt")

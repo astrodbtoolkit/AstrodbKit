@@ -51,7 +51,7 @@ def test_datetime_json_parser():
     assert isinstance(new_dict['number'], float)
 
 
-@mock.patch('astrodbkit2.utils.Simbad.query_objectids')
+@mock.patch('astrodbkit.utils.Simbad.query_objectids')
 def test_get_simbad_names(mock_simbad):
     mock_simbad.return_value = Table({'ID': ['name 1', 'name 2', 'V* name 3', 'HIDDEN name']})
     t = get_simbad_names('twa 27')
