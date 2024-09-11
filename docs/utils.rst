@@ -1,7 +1,7 @@
 utils module
 ==============
 
-.. automodule:: astrodbkit2.utils
+.. automodule:: astrodbkit.utils
    :members:
    :ignore-module-all:
    :undoc-members:

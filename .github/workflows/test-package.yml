@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Test Astrodbkit2
+name: Test Astrodbkit
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         ruff check astrodbkit2 --select=E9,F63,F7,F82 --statistics
         # exit-zero treats all errors as warnings.
-        ruff check astrodbkit2 --config=pyproject.toml --exit-zero
+        ruff check astrodbkit --config=pyproject.toml --exit-zero
     - name: Test with pytest
       run: |
         pytest --cov --cov-config=setup.cfg --cov-report=term --cov-report=xml:coverage.xml

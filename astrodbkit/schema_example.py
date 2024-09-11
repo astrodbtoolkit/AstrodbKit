@@ -8,8 +8,8 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, String
 from sqlalchemy.orm import validates
 
-from astrodbkit2.astrodb import Base
-from astrodbkit2.views import view
+from astrodbkit.astrodb import Base
+from astrodbkit.views import view
 
 
 # -------------------------------------------------------------------------------------------------------------------
