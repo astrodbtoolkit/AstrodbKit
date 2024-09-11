@@ -9,7 +9,7 @@ build-backend = 'setuptools.build_meta'
 
 
 [project]
-name = "astrodbkit2"
+name = "astrodbkit"
 description = "Astronomical database handler code"
 dynamic = ["version"]
 readme = {file = "README.rst", content-type = "text/x-rst"}
@@ -42,43 +42,43 @@ test = [
 docs = [
     "sphinx-astropy"
 ]
-all = ["astrodbkit2[test, docs]"]
+all = ["astrodbkit[test, docs]"]
 
 [project.urls]
-Repository = "https://github.com/astrodbtoolkit/AstrodbKit2"
+Repository = "https://github.com/astrodbtoolkit/AstrodbKit"
 
 
 [tool.setuptools]
-packages = ["astrodbkit2"]
+packages = ["astrodbkit"]
 
 [tool.setuptools.dynamic]
-version = {attr = "astrodbkit2.__version__"}
+version = {attr = "astrodbkit.__version__"}
 
 [tool.setuptools_scm]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
-version_file = "astrodbkit2/version.py"
+version_file = "astrodbkit/version.py"
 
 
 [tool.pytest.ini_options]
-testpaths = "astrodbkit2"
+testpaths = "astrodbkit"
 
 
 [tool.coverage.run]
 omit = [
-    "astrodbkit2/_astropy_init*",
-    "astrodbkit2/conftest.py",
-    "astrodbkit2/*setup_package*",
-    "astrodbkit2/tests/*",
-    "astrodbkit2/*/tests/*",
-    "astrodbkit2/extern/*",
-    "astrodbkit2/version*",
-    "*/astrodbkit2/_astropy_init*",
-    "*/astrodbkit2/conftest.py",
-    "*/astrodbkit2/*setup_package*",
-    "*/astrodbkit2/tests/*",
-    "*/astrodbkit2/*/tests/*",
-    "*/astrodbkit2/extern/*",
-    "*/astrodbkit2/version*",
+    "astrodbkit/_astropy_init*",
+    "astrodbkit/conftest.py",
+    "astrodbkit/*setup_package*",
+    "astrodbkit/tests/*",
+    "astrodbkit/*/tests/*",
+    "astrodbkit/extern/*",
+    "astrodbkit/version*",
+    "*/astrodbkit/_astropy_init*",
+    "*/astrodbkit/conftest.py",
+    "*/astrodbkit/*setup_package*",
+    "*/astrodbkit/tests/*",
+    "*/astrodbkit/*/tests/*",
+    "*/astrodbkit/extern/*",
+    "*/astrodbkit/version*",
 ]
 
 

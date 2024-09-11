@@ -1,7 +1,7 @@
 spectra module
 ==============
 
-.. automodule:: astrodbkit2.spectra
+.. automodule:: astrodbkit.spectra
    :members:
    :ignore-module-all:
    :undoc-members:

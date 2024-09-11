@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Test Astrodbkit2
+name: Test Astrodbkit
 
 on:
   push:
@@ -18,9 +18,9 @@ jobs:
         python-version: [3.8, 3.9, '3.10', 3.11]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -31,9 +31,9 @@ jobs:
     - name: Lint with ruff
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        ruff check astrodbkit2 --select=E9,F63,F7,F82 --statistics
+        ruff check astrodbkit --select=E9,F63,F7,F82 --statistics
         # exit-zero treats all errors as warnings.
-        ruff check astrodbkit2 --config=pyproject.toml --exit-zero
+        ruff check astrodbkit --config=pyproject.toml --exit-zero
     - name: Test with pytest
       run: |
         pytest --cov --cov-config=setup.cfg --cov-report=term --cov-report=xml:coverage.xml

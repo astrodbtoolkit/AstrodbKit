@@ -14,9 +14,9 @@ from astropy.table import Table
 from astropy.units.quantity import Quantity
 from sqlalchemy.exc import IntegrityError
 
-from astrodbkit2.astrodb import Database, copy_database_schema, create_database
-from astrodbkit2.schema_example import *
-from astrodbkit2.views import view
+from astrodbkit.astrodb import Database, copy_database_schema, create_database
+from astrodbkit.schema_example import *
+from astrodbkit.views import view
 
 try:
     import mock
@@ -197,7 +197,7 @@ def test_query_data(db):
     assert db.query(db.Sources.c.source).limit(1).all()[0][0] == '2MASS J13571237+1428398'
 
 
-@mock.patch('astrodbkit2.astrodb.get_simbad_names', return_value=['fake'])
+@mock.patch('astrodbkit.astrodb.get_simbad_names', return_value=['fake'])
 def test_search_object(mock_simbad, db):
     # Use the search_object method to do partial string searching
 
@@ -310,7 +310,7 @@ def test_query_formats(db):
     assert isinstance(t, pd.DataFrame)
 
 
-@mock.patch('astrodbkit2.astrodb.load_spectrum')
+@mock.patch('astrodbkit.astrodb.load_spectrum')
 def test_query_spectra(mock_spectrum, db):
     # Test special conversions in query methods
     def fake_loader(x, spectra_format=None):
