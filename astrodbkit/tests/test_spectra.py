@@ -5,7 +5,7 @@ import pytest
 from astropy.io import fits
 from astropy.units import Unit
 
-from astrodbkit2.spectra import (
+from astrodbkit.spectra import (
     _identify_spex,
     identify_spex_prism,
     identify_wcs1d_multispec,

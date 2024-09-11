@@ -4,7 +4,7 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import Session, declarative_base
 
-from astrodbkit2.views import *
+from astrodbkit.views import *
 
 
 def test_views():

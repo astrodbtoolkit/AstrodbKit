@@ -8,7 +8,7 @@ from io import StringIO
 import pytest
 from astropy.table import Table
 
-from astrodbkit2.utils import _name_formatter, datetime_json_parser, get_simbad_names, json_serializer
+from astrodbkit.utils import _name_formatter, datetime_json_parser, get_simbad_names, json_serializer
 
 try:
     import mock
