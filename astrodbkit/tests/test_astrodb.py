@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import shutil
 
 import pandas as pd
 import pytest
@@ -413,31 +414,35 @@ def test_views(db):
 
 def test_save_reference_table(db, db_dir):
     # Test saving a reference table
-    if os.path.exists(os.path.join(db_dir, 'Publications.json')):
-        os.remove(os.path.join(db_dir, 'Publications.json'))
-    db.save_reference_table('Publications', db_dir)
-    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
-    os.remove(os.path.join(db_dir, 'Publications.json'))  # explicitly removing so that the next step will get verified
+    ref_dir = "reference"
+    if os.path.exists(os.path.join(db_dir, ref_dir, 'Publications.json')):
+        os.remove(os.path.join(db_dir, ref_dir, 'Publications.json'))
+    db.save_reference_table('Publications', db_dir, reference_directory=ref_dir)
+    assert os.path.exists(os.path.join(db_dir, ref_dir, 'Publications.json'))
+    os.remove(os.path.join(db_dir, ref_dir, 'Publications.json'))  # explicitly removing so that the next step will get verified
 
 
 def test_save_database(db, db_dir):
     # Test saving the database to JSON files
 
     # Clear temporary directory first
-    # if not os.path.exists(DB_DIR):
-    #     os.mkdir(DB_DIR)
     for file in os.listdir(db_dir):
-        os.remove(os.path.join(db_dir, file))
+        file_path = os.path.join(db_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
     db.save_database(db_dir)
 
     # Check JSON data
-    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
-    assert os.path.exists(os.path.join(db_dir, '2mass_j13571237+1428398.json'))
+    assert os.path.exists(os.path.join(db_dir, "reference", 'Publications.json'))
+    assert os.path.exists(os.path.join(db_dir, "source", '2mass_j13571237+1428398.json'))
     assert not os.path.exists(os.path.join(db_dir, '2mass_j13571237+1428398 2.json'))
+    assert not os.path.exists(os.path.join(db_dir, "source", '2mass_j13571237+1428398 2.json'))
 
     # Load source and confirm it is the same
-    with open(os.path.join(db_dir, '2mass_j13571237+1428398.json'), 'r') as f:
+    with open(os.path.join(db_dir, "source", '2mass_j13571237+1428398.json'), 'r') as f:
         data = json.load(f)
     assert data == db.inventory('2MASS J13571237+1428398')
 
@@ -457,7 +462,7 @@ def test_load_database(db, db_dir):
 
     # Reload the database and check DB contents
     assert os.path.exists(db_dir)
-    assert os.path.exists(os.path.join(db_dir, 'Publications.json'))
+    assert os.path.exists(os.path.join(db_dir, "reference", 'Publications.json'))
     db.load_database(db_dir, verbose=True)
     assert db.query(db.Publications).count() == 2
     assert db.query(db.Photometry).count() == 3
@@ -466,7 +471,11 @@ def test_load_database(db, db_dir):
 
     # Clear temporary directory and files
     for file in os.listdir(db_dir):
-        os.remove(os.path.join(db_dir, file))
+        file_path = os.path.join(db_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
 
 def test_copy_database_schema():

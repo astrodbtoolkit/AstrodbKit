@@ -5,6 +5,7 @@ __all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 import json
 import os
 import sqlite3
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -736,8 +737,9 @@ class Database:
         with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
             f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_reference_table(self, table, directory):
+    def save_reference_table(self, table: str, directory: str, reference_directory: str="reference"):
         """
+        Save the reference table to disk
 
         Parameters
         ----------
@@ -745,16 +747,22 @@ class Database:
             Name of reference table to output
         directory : str
             Name of directory in which to save the output JSON
+        reference_directory : str
+            Name of sub-directory to use for reference JSON files (eg, data/reference)
         """
+
+        # Create directory if not already present
+        if not os.path.isdir(os.path.join(directory, reference_directory)):
+            os.makedirs(os.path.join(directory, reference_directory))
 
         results = self.session.query(self.metadata.tables[table]).all()
         data = [row._asdict() for row in results]
         filename = table + ".json"
         if len(data) > 0:
-            with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
+            with open(os.path.join(directory, reference_directory, filename), "w", encoding="utf-8") as f:
                 f.write(json.dumps(data, indent=4, default=json_serializer))
 
-    def save_database(self, directory, clear_first=True):
+    def save_database(self, directory: str, clear_first: bool=True, reference_directory: str="reference", source_directory: str="source"):
         """
         Output contents of the database into the specified directory as JSON files.
         Source objects have individual JSON files with all data for that object.
@@ -763,28 +771,45 @@ class Database:
         Parameters
         ----------
         directory : str
-            Name of directory in which to save the output JSON
+            Name of top-level directory in which to save the output JSON
         clear_first : bool
             First clear the directory of all existing JSON (useful to capture DB deletions). Default: True
+        reference_directory : str
+            Name of sub-directory to use for reference JSON files (eg, data/reference)
+        source_directory : str
+            Name of sub-directory to use for source JSON files (eg, data/source)
         """
 
         # Clear existing files first from that directory
         if clear_first:
             print("Clearing existing JSON files...")
-            for filename in os.listdir(directory):
-                os.remove(os.path.join(directory, filename))
+            for file in os.listdir(directory):
+                file_path = os.path.join(directory, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    # This is to handle the reference and source directories
+                    shutil.rmtree(file_path)
+        
+        # Create sub-directories if not already present
+        if not os.path.isdir(os.path.join(directory, reference_directory)):
+            os.makedirs(os.path.join(directory, reference_directory))
+        if not os.path.isdir(os.path.join(directory, source_directory)):
+            os.makedirs(os.path.join(directory, source_directory))
 
         # Output reference tables
+        print(f"Storing reference tables to {os.path.join(directory, reference_directory)}...")
         for table in self._reference_tables:
             # Skip reference tables that are not actually in the database
             if table not in self.metadata.tables.keys():
                 continue
 
-            self.save_reference_table(table, directory)
+            self.save_reference_table(table, directory, reference_directory=reference_directory)
 
         # Output primary objects
+        print(f"Storing individual sources to {os.path.join(directory, source_directory)}...")
         for row in tqdm(self.query(self.metadata.tables[self._primary_table])):
-            self.save_json(row, directory)
+            self.save_json(row, os.path.join(directory, source_directory))
 
     # Object input methods
     def add_table_data(self, data, table, fmt="csv"):
@@ -892,7 +917,7 @@ class Database:
                     temp_dict[self._foreign_key] = source
                     conn.execute(self.metadata.tables[key].insert().values(temp_dict))
 
-    def load_database(self, directory, verbose=False):
+    def load_database(self, directory: str, verbose: bool=False, reference_directory: str="reference", source_directory: str="source"):
         """
         Reload entire database from a directory of JSON files.
         Note that this will first clear existing tables.
@@ -900,9 +925,13 @@ class Database:
         Parameters
         ----------
         directory : str
-            Name of directory containing the JSON files
+            Name of top-level directory containing the JSON files
         verbose : bool
             Flag to enable diagnostic messages
+        reference_directory : str
+            Relative path to sub-directory to use for reference JSON files (eg, data/reference)
+        source_directory : str
+            Relative path to sub-directory to use for source JSON files (eg, data/source)
         """
 
         # Clear existing database contents
@@ -917,12 +946,24 @@ class Database:
         for table in self._reference_tables:
             if verbose:
                 print(f"Loading {table} table")
-            self.load_table(table, directory, verbose=verbose)
+            # Check if the reference table is in the sub-directory
+            if os.path.exists(os.path.join(directory, reference_directory, table+".json")):
+                self.load_table(table, os.path.join(directory, reference_directory), verbose=verbose)
+            else:
+                self.load_table(table, directory, verbose=verbose)
 
         # Load object data
         if verbose:
             print("Loading object tables")
-        for file in tqdm(os.listdir(directory)):
+
+        # Check if the sources are in the sub-directory
+        if os.path.exists(os.path.join(directory, source_directory)):
+            directory_of_sources = os.path.join(directory, source_directory)
+        else:
+            directory_of_sources = directory
+
+        # Scan selected directory for JSON source files
+        for file in tqdm(os.listdir(directory_of_sources)):
             # Skip reference tables
             core_name = file.replace(".json", "")
             if core_name in self._reference_tables:
@@ -932,7 +973,7 @@ class Database:
             if not file.endswith(".json") or file.startswith("."):
                 continue
 
-            self.load_json(os.path.join(directory, file))
+            self.load_json(os.path.join(directory_of_sources, file))
 
     def dump_sqlite(self, database_name):
         """Output database as a sqlite file"""
