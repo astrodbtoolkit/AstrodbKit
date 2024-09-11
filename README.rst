@@ -5,17 +5,17 @@ Astronomical database handler code
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-.. image:: https://github.com/astrodbtoolkit/AstrodbKit2/workflows/Test%20Astrodbkit2/badge.svg?branch=main
-    :target: https://github.com/astrodbtoolkit/AstrodbKit2/actions
+.. image:: https://github.com/astrodbtoolkit/AstrodbKit/workflows/Test%20Astrodbkit/badge.svg?branch=main
+    :target: https://github.com/astrodbtoolkit/AstrodbKit/actions
 
-.. image:: https://codecov.io/gh/astrodbtoolkit/AstrodbKit2/graph/badge.svg?token=LMKVN65D82 
-    :target: https://codecov.io/gh/astrodbtoolkit/AstrodbKit2
+.. image:: https://codecov.io/gh/astrodbtoolkit/AstrodbKit/graph/badge.svg?token=LMKVN65D82 
+    :target: https://codecov.io/gh/astrodbtoolkit/AstrodbKit
 
-AstrodbKit2 is an astronomical database handler code built on top of SQLAlchemy.
+AstrodbKit is an astronomical database handler code built on top of SQLAlchemy.
 This is built to work with the `SIMPLE database <https://github.com/SIMPLE-AstroDB/SIMPLE-db>`_, though
 similarly constructed databases will work.
 
-Documentation is available at `https://astrodbkit2.readthedocs.io/en/latest/ <https://astrodbkit2.readthedocs.io/en/latest/>`_
+Documentation is available at `https://astrodbkit.readthedocs.io/en/latest/ <https://astrodbkit.readthedocs.io/en/latest/>`_
 
 License
 -------
@@ -30,7 +30,7 @@ more information.
 Contributing
 ------------
 
-We love contributions! `AstrodbKit2 <https://astrodbkit2.readthedocs.io/en/latest/>`_ is open source,
+We love contributions! `AstrodbKit <https://astrodbkit.readthedocs.io/en/latest/>`_ is open source,
 built on open source, and we'd love to have you hang out in our community.
 
 **Imposter syndrome disclaimer**: We want your help. No, really.
@@ -56,5 +56,5 @@ the errors and assumptions that seasoned contributors have glossed over.
 Note: This disclaimer was originally written by
 `Adrienne Lowe <https://github.com/adriennefriend>`_ for a
 `PyCon talk <https://www.youtube.com/watch?v=6Uj746j9Heo>`_, and was adapted by
-AstrodbKit2 based on its use in the README file for the
+AstrodbKit based on its use in the README file for the
 `MetPy project <https://github.com/Unidata/MetPy>`_.

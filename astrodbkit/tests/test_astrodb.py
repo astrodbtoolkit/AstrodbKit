@@ -13,9 +13,9 @@ from astropy.table import Table
 from astropy.units.quantity import Quantity
 from sqlalchemy.exc import IntegrityError
 
-from astrodbkit2.astrodb import Database, copy_database_schema, create_database
-from astrodbkit2.schema_example import *
-from astrodbkit2.views import view
+from astrodbkit.astrodb import Database, copy_database_schema, create_database
+from astrodbkit.schema_example import *
+from astrodbkit.views import view
 
 try:
     import mock

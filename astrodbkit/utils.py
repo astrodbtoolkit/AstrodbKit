@@ -1,4 +1,4 @@
-"""Utility functions for Astrodbkit2"""
+"""Utility functions for Astrodbkit"""
 
 import functools
 import re
