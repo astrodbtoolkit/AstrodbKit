@@ -5,8 +5,8 @@ Astronomical database handler code
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-.. image:: https://github.com/astrodbtoolkit/AstrodbKit/workflows/Test%20Astrodbkit/badge.svg?branch=main
-    :target: https://github.com/astrodbtoolkit/AstrodbKit/actions
+.. image:: https://github.com/astrodbtoolkit/AstrodbKit/actions/workflows/test-package.yml/badge.svg
+    :target: https://github.com/astrodbtoolkit/AstrodbKit/actions/workflows/test-package.yml
 
 .. image:: https://codecov.io/gh/astrodbtoolkit/AstrodbKit/graph/badge.svg?token=LMKVN65D82 
     :target: https://codecov.io/gh/astrodbtoolkit/AstrodbKit
