@@ -106,7 +106,7 @@ release = package.__version__
 
 
 html_theme_options = {
-    'logotext1': 'AstrodbKit2',  # white,  semi-bold
+    'logotext1': 'AstrodbKit',  # white,  semi-bold
     'logotext2': '',  # orange, light
     'logotext3': ':docs'   # white,  light
     }
