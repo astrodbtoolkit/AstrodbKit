@@ -195,8 +195,8 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
     """
     Create a database from a schema that utilizes the `astrodbkit2.astrodb.Base` class.
     Some databases, eg Postgres, must already exist but any tables should be dropped.
-    If using Felis yaml files, the path to the schema needs to be provided via the felis_schema parameter. 
-    Otherwise, this assumes you have imported a schema.py file with SQLAlchemy definitions.
+    The default behavior is to assume that a schema with SQLAlchemy definitions has been imported prior to calling this function.
+    If instead, Felis is being used to define the schema, the path to the YAML file needs to be provided to the felis_schema parameter (as a string). 
 
     Parameters
     ----------
