@@ -4,13 +4,13 @@ __all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 
 import json
 import os
-import sqlite3
 import shutil
-import yaml
+import sqlite3
 
 import numpy as np
 import pandas as pd
 import sqlalchemy.types as sqlalchemy_types
+import yaml
 from astropy.coordinates import SkyCoord
 from astropy.table import Table as AstropyTable
 from astropy.units.quantity import Quantity
@@ -18,6 +18,7 @@ from sqlalchemy import Table, and_, create_engine, event, or_, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm.query import Query
+from sqlalchemy.schema import CreateSchema
 from tqdm import tqdm
 
 from . import FOREIGN_KEY, PRIMARY_TABLE, PRIMARY_TABLE_KEY, REFERENCE_TABLES
@@ -220,11 +221,15 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
         # engine = create_engine(connection_string)
         session, base, engine = load_connection(connection_string)
 
-        # Workaround for SQLite since it doesn't support schema
+        # Schema handling for various database types
         if connection_string.startswith("sqlite"):
             db_name = connection_string.split("/")[-1]
             with engine.begin() as conn:
                 conn.execute(text(f"ATTACH '{db_name}' AS {schema_name}"))
+        elif connection_string.startswith("postgres"):
+            with engine.connect() as connection:
+                connection.execute(CreateSchema(schema_name, if_not_exists=True))
+                connection.commit()
 
         # Drop tables, if requested
         if drop_tables:
@@ -341,9 +346,9 @@ class Database:
         """
 
         # Helper logic to set default postgres schema, if specified
-        if connection_string.lower().startswith("postgres") and schema is not None:
-            if connection_string.get("options") is None:
-                connection_string["options"] = f"-csearch_path={schema}"
+        if connection_string.startswith("postgres") and schema is not None:
+            if connection_arguments.get("options") is None:
+                connection_arguments["options"] = f"-csearch_path={schema}"
 
         if connection_string == "sqlite://":
             self.session, self.base, self.engine = create_database(connection_string)
