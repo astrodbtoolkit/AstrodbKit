@@ -223,7 +223,8 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
 
         # Schema handling for various database types
         if connection_string.startswith("sqlite"):
-            db_name = connection_string.split("/")[-1]
+            # Get the full path to the file as otherwise the DB is only created in the working directory
+            db_name = connection_string.replace("sqlite:///", "")
             with engine.begin() as conn:
                 conn.execute(text(f"ATTACH '{db_name}' AS {schema_name}"))
         elif connection_string.startswith("postgres"):
