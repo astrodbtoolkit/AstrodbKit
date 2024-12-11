@@ -310,6 +310,7 @@ class Database:
         column_type_overrides={},
         sqlite_foreign=True,
         connection_arguments={},
+        schema=None,
     ):
         """
         Wrapper for database calls and utility functions
@@ -335,7 +336,14 @@ class Database:
             Flag to enable/disable use of foreign keys with SQLite. Default: True
         connection_arguments : dict
             Additional connection arguments, like {'check_same_thread': False}. Default: {}
+        schema : str
+            Helper for setting default PostgreSQL schema. Equivalent to connection_arguments={"options": f"-csearch_path={schema}"}
         """
+
+        # Helper logic to set default postgres schema, if specified
+        if connection_string.lower().startswith("postgres") and schema is not None:
+            if connection_string.get("options") is None:
+                connection_string["options"] = f"-csearch_path={schema}"
 
         if connection_string == "sqlite://":
             self.session, self.base, self.engine = create_database(connection_string)
