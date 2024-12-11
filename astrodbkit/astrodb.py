@@ -168,7 +168,7 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
     session = Session()
 
     # Enable foreign key checks in SQLite
-    if "sqlite" in connection_string and sqlite_foreign:
+    if connection_string.startswith("sqlite") and sqlite_foreign:
         set_sqlite()
     # elif 'postgresql' in connection_string:
     #     # Set up schema in postgres (must be lower case?)
