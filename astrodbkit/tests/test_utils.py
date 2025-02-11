@@ -53,7 +53,7 @@ def test_datetime_json_parser():
 
 @mock.patch('astrodbkit.utils.Simbad.query_objectids')
 def test_get_simbad_names(mock_simbad):
-    mock_simbad.return_value = Table({'ID': ['name 1', 'name 2', 'V* name 3', 'HIDDEN name']})
+    mock_simbad.return_value = Table({'id': ['name 1', 'name 2', 'V* name 3', 'HIDDEN name']})
     t = get_simbad_names('twa 27')
     assert len(t) == 3
     assert t[2] == 'name 3'
@@ -63,3 +63,10 @@ def test_get_simbad_names(mock_simbad):
     t = get_simbad_names('WISEU J005559.88+594745.0')
     assert len(t) == 1
     assert t[0] == 'WISEU J005559.88+594745.0'
+
+
+def test_get_simbad_names_live():
+    """Unmocked version of the call to Simbad to catch API changes"""
+    t = get_simbad_names("TWA 27")
+    print(len(t))
+    assert "TIC 102076870" in t

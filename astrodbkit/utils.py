@@ -122,7 +122,7 @@ def get_simbad_names(name, verbose=False):
 
     t = Simbad.query_objectids(name)
     if t is not None and len(t) > 0:
-        temp = [_name_formatter(s) for s in t["ID"].tolist()]
+        temp = [_name_formatter(s) for s in t["id"].tolist()]
         return [s for s in temp if s is not None and s != ""]
     else:
         if verbose:

@@ -21,7 +21,7 @@ authors = [
 requires-python = ">= 3.11"
 dependencies = [
     "astropy",
-    "astroquery",
+    "astroquery>=0.4.9",
     "sqlalchemy>=2.0.38",
     "pandas>=1.0.4",
     "packaging",
