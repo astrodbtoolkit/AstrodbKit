@@ -68,5 +68,4 @@ def test_get_simbad_names(mock_simbad):
 def test_get_simbad_names_live():
     """Unmocked version of the call to Simbad to catch API changes"""
     t = get_simbad_names("TWA 27")
-    print(len(t))
     assert "TIC 102076870" in t

@@ -20,7 +20,7 @@ authors = [
 ]
 requires-python = ">= 3.11"
 dependencies = [
-    "astropy",
+    "astropy>7.0",
     "astroquery>=0.4.9",
     "sqlalchemy>=2.0.38",
     "pandas>=1.0.4",
@@ -34,10 +34,10 @@ test = [
     "pytest",
     "pytest-cov",
     "pytest-astropy",
-    "darker==1.7.2",
-    "black==23.9.1",
-    "pre-commit==3.4.0",
-    "ruff==0.3.7",
+    "darker>=1.7.2",
+    "black>=23.9.1",
+    "pre-commit>=3.4.0",
+    "ruff>=0.3.7",
 ]
 docs = [
     "sphinx-astropy"
