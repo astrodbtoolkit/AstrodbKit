@@ -509,6 +509,27 @@ These options can facilitate the creation of robust ingest scripts that are both
 and that can take care of validating input values before they get to the database.
 
 
+Advanced Database Considerations
+================================
+
+Here we provide useful tips or guidance when working with **AstrodbKit**.
+
+Handling Relationships Between Object Tables
+--------------------------------------------
+
+Becuase **AstrodbKit** expects a single primary table, object tables that point back to it, and any number of reference tables, it can be difficult to handle relationships between object tables. 
+
+As an example, consider the scenario where you want to store companion information to your sources, such as a table to store the relationship with orbital separation and a separate one to start general parameters. 
+You may be calling these CompanionRelationship and CompanionParameters, respectively. 
+If you want to link them together, you might decide to specify that the companion in the CompanionRelationship table should be a foreign key to the CompanionParameters table.
+**However**, this will run into issues on database saving/loading as the output JSON files will no necessarily load tables in the order you expect. 
+You might find it attempting to load CompanionParameters only to find that CompanionRelationship hasn't been loaded yet all the foreign keys are broken.
+
+The better approach is to define a lookup table that will store the companion identifiers which will be used as the foreign keys. 
+For example, a CompanionList table that both CompanionParameters and CompanionRelationship can refer to. 
+This would be a reference table, similar to Telescopes or Publications, while CompanionParameters and CompanionRelationship would be object tables that require tying back to a specific source in the Sources table.
+Essentially, this is normalizing the database a bit further and serves to avoid some common issues with foreign keys.
+
 Reference/API
 =============
 

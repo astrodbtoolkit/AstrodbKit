@@ -34,6 +34,10 @@ REFERENCE_TABLES = [
     "Versions",
     "Parameters",
     "Regimes",
+    "ParameterList",
+    "AssociationList",
+    "CompanionList",
+    "SourceTypeList",
 ]
 # REFERENCE_TABLES is a list of tables that do not link to the primary table.
 # These are treated separately from the other data tables that are all assumed to be linked to the primary table.

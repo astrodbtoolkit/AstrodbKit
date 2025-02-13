@@ -35,6 +35,7 @@ tables:
       datatype: string
       length: 1000
       description: Publication description
+      ivoa:ucd: meta.note
 
 
   - name: Telescopes
@@ -56,6 +57,7 @@ tables:
       datatype: string
       length: 30
       description: Publication reference; links to Publications table
+      ivoa:ucd: meta.ref
 
     constraints:
       - name: Telescopes_reference_Publications_name
@@ -158,8 +160,9 @@ tables:
     - name: comments
       "@id": "#Sources.comments"
       datatype: string
-      length: 1000
+      length: 100
       description: Free-form comments on this Source
+      ivoa:ucd: meta.note
 
 
     indexes:
@@ -251,6 +254,7 @@ tables:
       datatype: string
       length: 30
       description: Photometry band for this measurement
+      ivoa:ucd: instr.bandpass
     - name: ucd
       "@id": "#Photometry.ucd"
       datatype: string
@@ -261,37 +265,44 @@ tables:
       datatype: double
       description: Magnitude value for this entry
       fits:tunit: mag
+      ivoa:ucd: phot.mag
     - name: magnitude_error
       "@id": "#Photometry.magnitude_error"
       datatype: double
       description: Uncertainty of this magnitude value
       fits:tunit: mag
+      ivoa:ucd: stat.error;phot.mag
     - name: telescope
       "@id": "#Photometry.telescope"
       datatype: string
       length: 30
       description: Telescope, mission, or survey name; links to Telescopes table
+      ivoa:ucd: instr.tel
     - name: instrument
       "@id": "#Photometry.instrument"
       datatype: string
       length: 30
       description: Instrument name; links to Instruments table
+      ivoa:ucd: instr
     - name: epoch
       "@id": "#Photometry.epoch"
       datatype: double
       description: Decimal year
       fits:tunit: yr
+      ivoa:ucd: time.epoch
     - name: comments
       "@id": "#Photometry.comments"
       datatype: string
       length: 1000
       description: Free-form comments for this entry
+      ivoa:ucd: meta.note
     - name: reference
       "@id": "#Photometry.reference"
       datatype: string
       length: 30
       description: Publication reference; links to Publications table
       nullable: false
+      ivoa:ucd: meta.ref
 
     indexes:
       - name: PK_Photometry
