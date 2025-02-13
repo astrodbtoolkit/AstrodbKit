@@ -519,7 +519,7 @@ Handling Relationships Between Object Tables
 
 Becuase **AstrodbKit** expects a single primary table, object tables that point back to it, and any number of reference tables, it can be difficult to handle relationships between object tables. 
 
-As an example, consider the scenario where you want to store companion information to your sources, such as a table to store the relationship with orbital separation and a separate one to start general parameters. 
+As an example, consider the scenario where you want to store companion information to your sources, such as a table to store the relationship with orbital separation and a separate one to store general parameters. 
 You may be calling these CompanionRelationship and CompanionParameters, respectively. 
 If you want to link them together, you might decide to specify that the companion in the CompanionRelationship table should be a foreign key to the CompanionParameters table.
 **However**, this will run into issues on database saving/loading as the output JSON files will no necessarily load tables in the order you expect. 
