@@ -553,7 +553,8 @@ class Database:
 
         # Verify provided tables exist in database
         for k in table_names.keys():
-            print(f"Using table '{k}' with columns {table_names[k]} for matching object names")
+            if verbose:
+                print(f"Using table '{k}' with columns {table_names[k]} for matching object names")
             if k not in self.metadata.tables:
                 raise RuntimeError(f"Table {k} is not in the database")
 
