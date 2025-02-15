@@ -450,7 +450,8 @@ def test_save_database(db, db_dir):
         elif os.path.isdir(file_path):
             shutil.rmtree(file_path)
 
-    db.save_database(db_dir)
+    # Can use db.save, db.save_db, or db.save_database
+    db.save(db_dir)
 
     # Check JSON data
     assert os.path.exists(os.path.join(db_dir, "reference", 'Publications.json'))

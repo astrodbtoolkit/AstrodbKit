@@ -358,8 +358,9 @@ class Database:
                 connection_string, sqlite_foreign=sqlite_foreign, connection_arguments=connection_arguments
             )
 
-        # Convenience methods
+        # Convenience methods and aliases
         self.query = self.session.query
+        self.save = self.save_database
         self.save_db = self.save_database
         self.load_db = self.load_database
 
