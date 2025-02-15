@@ -497,7 +497,7 @@ class Database:
         name,
         output_table=None,
         resolve_simbad=False,
-        table_names={"Sources": ["source", "shortname"], "Names": ["other_name"]},
+        table_names={"Sources": ["source"], "Names": ["other_name"]},
         fmt="table",
         fuzzy_search=True,
         verbose=True,
@@ -517,7 +517,7 @@ class Database:
             Get additional names from Simbad. Default: False
         table_names : dict
             Dictionary of tables to search for name information. Should be of the form table name: column name list.
-            Default: {'Sources': ['source', 'shortname'], 'Names': 'other_name'}
+            Default: {'Sources': ['source'], 'Names': 'other_name'}
         fmt : str
             Format to return results in (pandas, astropy/table, default). Default is astropy table
         fuzzy_search : bool
@@ -553,6 +553,7 @@ class Database:
 
         # Verify provided tables exist in database
         for k in table_names.keys():
+            print(f"Using table '{k}' with columns {table_names[k]} for matching object names")
             if k not in self.metadata.tables:
                 raise RuntimeError(f"Table {k} is not in the database")
 
