@@ -47,7 +47,7 @@ def identify_spex_prism(origin, *args, **kwargs):
 
 @data_loader("Spex Prism", identifier=identify_spex_prism, extensions=["fits"], dtype=Spectrum)
 def spex_prism_loader(filename, **kwargs):
-    """Open a SpeX Prism file and convert it to a Spectrum1D object"""
+    """Open a SpeX Prism file and convert it to a Spectrum object"""
 
     with fits.open(filename, **kwargs) as hdulist:
         header = hdulist[0].header
