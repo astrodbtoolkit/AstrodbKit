@@ -142,7 +142,7 @@ def test_wcs1d_multispec_loader(mock_fits_open, good_wcs1dmultispec, alt_wcs1dmu
     assert spectrum.wavelength.unit == Unit("Angstrom")
 
 
-@mock.patch("astrodbkit.spectra.Spectrum1D.read")
+@mock.patch("astrodbkit.spectra.Spectrum.read")
 def test_load_spectrum(mock_spectrum1d, monkeypatch):
     _ = load_spectrum("fake_file.txt")
     mock_spectrum1d.assert_called_with("fake_file.txt")

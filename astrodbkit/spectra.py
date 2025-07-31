@@ -8,7 +8,7 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
 from astropy.wcs import WCS
-from specutils import Spectrum1D
+from specutils import Spectrum
 from specutils.io.parsing_utils import read_fileobj_or_hdulist
 from specutils.io.registers import data_loader
 
@@ -45,7 +45,7 @@ def identify_spex_prism(origin, *args, **kwargs):
         return is_spex
 
 
-@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=["fits"], dtype=Spectrum1D)
+@data_loader("Spex Prism", identifier=identify_spex_prism, extensions=["fits"], dtype=Spectrum)
 def spex_prism_loader(filename, **kwargs):
     """Open a SpeX Prism file and convert it to a Spectrum1D object"""
 
@@ -72,7 +72,7 @@ def spex_prism_loader(filename, **kwargs):
 
         meta = {"header": header}
 
-    return Spectrum1D(flux=data, spectral_axis=wave, uncertainty=uncertainty, meta=meta)
+    return Spectrum(flux=data, spectral_axis=wave, uncertainty=uncertainty, meta=meta)
 
 
 def identify_wcs1d_multispec(origin, *args, **kwargs):
@@ -92,7 +92,7 @@ def identify_wcs1d_multispec(origin, *args, **kwargs):
         )
 
 
-@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=["fits"], dtype=Spectrum1D, priority=10)
+@data_loader("wcs1d-multispec", identifier=identify_wcs1d_multispec, extensions=["fits"], dtype=Spectrum, priority=10)
 def wcs1d_multispec_loader(file_obj, flux_unit=None, hdu=0, verbose=False, **kwargs):
     """
     Loader for multiextension spectra as wcs1d. Adapted from wcs1d_fits_loader
@@ -115,7 +115,7 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None, hdu=0, verbose=False, **kwa
 
     Returns
     -------
-    :class:`~specutils.Spectrum1D`
+    :class:`~specutils.Spectrum`
     """
 
     with read_fileobj_or_hdulist(file_obj, **kwargs) as hdulist:
@@ -178,7 +178,7 @@ def wcs1d_multispec_loader(file_obj, flux_unit=None, hdu=0, verbose=False, **kwa
     # Store header as metadata information
     meta = {"header": header}
 
-    return Spectrum1D(flux=flux_data, spectral_axis=spectral_axis, uncertainty=uncertainty, meta=meta)
+    return Spectrum(flux=flux_data, spectral_axis=spectral_axis, uncertainty=uncertainty, meta=meta)
 
 
 def load_spectrum(filename: str, spectra_format: str = None, raise_error: bool = False):
@@ -189,8 +189,8 @@ def load_spectrum(filename: str, spectra_format: str = None, raise_error: bool =
     filename
         Name of the file to read
     spectra_format
-        Optional file format, passed to Spectrum1D.read.
-        In its absense Spectrum1D.read will attempt to determine the format.
+        Optional file format, passed to Spectrum.read.
+        In its absense Spectrum.read will attempt to determine the format.
     raise_error
         Boolean to control if a failure to read the spectrum should raise an error.
     """
@@ -208,9 +208,9 @@ def load_spectrum(filename: str, spectra_format: str = None, raise_error: bool =
 
     try:
         if spectra_format is not None:
-            spec1d = Spectrum1D.read(filename, format=spectra_format)
+            spec1d = Spectrum.read(filename, format=spectra_format)
         else:
-            spec1d = Spectrum1D.read(filename)
+            spec1d = Spectrum.read(filename)
     except Exception as e:  # pylint: disable=broad-except, invalid-name
         msg = f"Error loading {filename}: {e}"
 

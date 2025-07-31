@@ -328,7 +328,7 @@ General Queries with Transformations
 ------------------------------------
 
 **AstrodbKit** can convert columns to special types.
-Currently, spectra transformations are implemented and the specified column would be converted to a `Spectrum1D` object
+Currently, spectra transformations are implemented and the specified column would be converted to a `Spectrum` object
 using the `specutils package <https://specutils.readthedocs.io/en/stable/>`_.
 To call this, users can supply the name of the column to convert
 (by default, none is converted, though .spectra assumes the column name is *spectrum*)::
@@ -338,7 +338,7 @@ To call this, users can supply the name of the column to convert
     db.query(db.Spectra).spectra(fmt='astropy')
 
 These three calls will return results from the Spectra table and will attempt to convert the *spectrum*
-column to a Spectrum1D object for each row. Multiple columns to convert can also be passed as a list.
+column to a Spectrum object for each row. Multiple columns to convert can also be passed as a list.
 The parameter `spectra_format` can be specified if **specutils** is having trouble determining the type of spectrum.
 
 Spectra need to be specified as either URL or paths relative to an environment variable,

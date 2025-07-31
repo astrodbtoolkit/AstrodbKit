@@ -25,7 +25,7 @@ dependencies = [
     "sqlalchemy>=2.0.38",
     "pandas>=1.0.4",
     "packaging",
-    "specutils>=1.0",
+    "specutils>=2.0",
     "tqdm",
 ]
 
