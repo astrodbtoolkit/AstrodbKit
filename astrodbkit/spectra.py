@@ -5,7 +5,7 @@ import os
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
-from specutils import Spectrum1D as Spectrum
+from specutils import Spectrum
 from specutils.io.registers import data_loader
 
 # pylint: disable=no-member, unused-argument
