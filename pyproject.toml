@@ -43,7 +43,7 @@ docs = [
     "sphinx-astropy"
 ]
 felis = [
-    "lsst-felis"
+    "lsst-felis<=30.2026.2900"
 ]
 all = ["astrodbkit[test, docs, felis]"]
 
