@@ -72,6 +72,37 @@ def test_felis_db():
         os.remove(db_path)
 
 
+def test_drop_tables():
+    # Test that recreating a database with drop_tables=True clears existing data
+    db_path = "drop.db"
+
+    # Clear copy if file present
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+    connection_string = 'sqlite:///' + db_path
+    create_database(connection_string)
+    db = Database(connection_string)
+    with db.engine.begin() as conn:
+        conn.execute(db.Publications.insert().values(name='Ref 1'))
+    assert db.query(db.Publications).count() == 1
+    db.session.close()
+    db.engine.dispose()
+
+    # Recreate with drop_tables=True; tables should be dropped and recreated empty
+    create_database(connection_string, drop_tables=True)
+    db = Database(connection_string)
+    assert db.query(db.Publications).count() == 0
+    db.session.close()
+    db.engine.dispose()
+
+    # Felis branch should also accept drop_tables=True without error
+    create_database(connection_string, felis_schema="astrodbkit/schema_example_felis.yaml", drop_tables=True)
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+
 def test_add_data(db):
     # Load example data to the database
 

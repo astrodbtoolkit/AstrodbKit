@@ -163,7 +163,6 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
     engine = create_engine(connection_string, connect_args=connection_arguments)
     if not base:
         base = declarative_base()
-    base.metadata.bind = engine
     Session = sessionmaker(bind=engine, query_cls=AstrodbQuery)  # pylint: disable=invalid-name
     session = Session()
 
@@ -234,7 +233,7 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
 
         # Drop tables, if requested
         if drop_tables:
-            base.metadata.drop_all()
+            base.metadata.drop_all(bind=engine)
 
         # Create the database
         metadata = MetaDataBuilder(schema).build()
@@ -243,7 +242,7 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
     else:
         session, base, engine = load_connection(connection_string, base=Base)
         if drop_tables:
-            base.metadata.drop_all()
+            base.metadata.drop_all(bind=engine)
         base.metadata.create_all(engine)  # this explicitly creates the database
 
     return session, base, engine
@@ -652,6 +651,8 @@ class Database:
     def sql_query(self, query, fmt="default"):
         """
         Wrapper for a direct SQL query.
+        This is intended for read-only queries; changes made with statements such as
+        INSERT, UPDATE, or DELETE are not committed and will be rolled back.
 
         Parameters
         ----------

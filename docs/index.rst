@@ -326,6 +326,9 @@ to pass direct SQL queries to the database for users who may wish to write their
     results = db.sql_query('select * from sources', fmt='astropy')
     print(results)
 
+Note that :py:meth:`~astrodbkit.astrodb.Database.sql_query` is meant for read-only queries.
+Changes made with statements like INSERT, UPDATE, or DELETE are not committed and will be rolled back.
+
 General Queries with Transformations
 ------------------------------------
 
