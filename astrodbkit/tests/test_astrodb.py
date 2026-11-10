@@ -527,6 +527,29 @@ def test_load_database(db, db_dir):
             shutil.rmtree(file_path)
 
 
+def test_load_empty_table(tmp_path):
+    # Empty lookup JSON files (eg, []) should be skipped rather than inserting a blank row (issue #109)
+    connection_string = "sqlite:///" + str(tmp_path / "empty.db")
+    create_database(connection_string)
+    db = Database(connection_string)
+
+    with open(tmp_path / "Publications.json", "w") as f:
+        json.dump([], f)
+
+    db.load_table("Publications", str(tmp_path), verbose=True)
+    assert db.query(db.Publications).count() == 0
+
+    db.load_database(str(tmp_path))
+    assert db.query(db.Publications).count() == 0
+
+    # Empty DataFrame should also be a no-op
+    db.add_table_data(pd.DataFrame(columns=["name", "bibcode"]), table="Publications", fmt="pandas")
+    assert db.query(db.Publications).count() == 0
+
+    db.session.close()
+    db.engine.dispose()
+
+
 def test_copy_database_schema():
     connection_1 = 'sqlite:///' + DB_PATH
     connection_2 = 'sqlite:///second.db'

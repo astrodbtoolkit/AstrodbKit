@@ -896,6 +896,10 @@ class Database:
         else:
             raise RuntimeError(f"Unrecognized format {fmt}")
 
+        # Nothing to insert; SQLAlchemy would otherwise insert a single row of defaults
+        if df.empty:
+            return
+
         # Foreign key constraints will prevent inserts of missing sources,
         # but for clarity we'll check first and exit if there are missing sources
         if table != self._primary_table:
@@ -937,6 +941,11 @@ class Database:
         if os.path.exists(filename):
             with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                # SQLAlchemy treats an empty list as a single row of defaults, so skip empty files
+                if not data:
+                    if verbose:
+                        print(f"{table}.json is empty, skipping.")
+                    return
                 with self.engine.begin() as conn:
                     conn.execute(self.metadata.tables[table].insert().values(data))
         else:
