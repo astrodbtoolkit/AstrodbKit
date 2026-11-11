@@ -64,6 +64,7 @@ version_file = "astrodbkit/version.py"
 
 [tool.pytest.ini_options]
 testpaths = "astrodbkit"
+markers = ["simbad: test needs a live connection to SIMBAD (skipped if unreachable)"]
 
 
 [tool.coverage.run]

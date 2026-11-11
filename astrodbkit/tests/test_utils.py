@@ -65,6 +65,7 @@ def test_get_simbad_names(mock_simbad):
     assert t[0] == 'WISEU J005559.88+594745.0'
 
 
+@pytest.mark.simbad
 def test_get_simbad_names_live():
     """Unmocked version of the call to Simbad to catch API changes"""
     t = get_simbad_names("TWA 27")
