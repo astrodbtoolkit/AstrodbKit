@@ -22,6 +22,7 @@ requires-python = ">= 3.11"
 dependencies = [
     "astropy>7.0",
     "astroquery>=0.4.9",
+    "pyvo>=1.9",  # pyvo<1.9 imports astropy.samp, which is deprecated in astropy 8.0
     "sqlalchemy>=2.0.38",
     "pandas>=1.0.4",
     "packaging",
